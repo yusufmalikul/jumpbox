@@ -43,7 +43,7 @@ func _ready() -> void:
 	_about_box = _page(pages)
 	_label(_about_box, "JumpBox", 48)
 	_label(_about_box, "Versi " + str(ProjectSettings.get_setting("application/config/version", "?")), 26)
-	_label(_about_box, "Main tanpa internet, gratis", 26)
+	_label(_about_box, "Main tanpa internet, gratis.", 26)
 	_label(_about_box, "Dibuat oleh Yusuf\nThreads: @yusufmalikul", 30)
 	_label(_about_box, "Dibuat dengan Godot Engine (lisensi MIT).", 20)
 	_button(_about_box, "Kembali", Color(0.3, 0.65, 0.95), _show_main)
