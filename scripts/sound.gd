@@ -12,6 +12,7 @@ const SFX := {
 	"sit": preload("res://assets/sfx/sit.wav"),
 	"home": preload("res://assets/sfx/home.wav"),
 	"fanfare": preload("res://assets/sfx/fanfare.wav"),
+	"checkpoint": preload("res://assets/sfx/checkpoint.wav"),
 }
 const MUSIC := preload("res://assets/music/park.wav")
 const MUSIC_VOLUME_DB := -8.0

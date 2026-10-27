@@ -7,6 +7,7 @@ const Rides := preload("res://scripts/rides.gd")
 const PlayerScript := preload("res://scripts/player.gd")
 const TouchUIScript := preload("res://scripts/touch_ui.gd")
 const SoundScript := preload("res://scripts/sound.gd")
+const ObbyScript := preload("res://scripts/obby.gd")
 
 const SPAWN := Vector3(0, 0.1, 8)
 const HALF_SIZE := 38.0
@@ -22,6 +23,8 @@ const RAINBOW: Array[Color] = [
 
 var _clouds: Array[Node3D] = []
 var _sound: Node
+var _player: Node
+var _obby: Node
 
 
 func _ready() -> void:
@@ -41,7 +44,8 @@ func _ready() -> void:
 	_build_clouds()
 
 	var player := PlayerScript.new()
-	player.spawn_point = SPAWN
+	_player = player
+	player.respawn_point = SPAWN
 	player.sound = _sound
 	player.position = SPAWN
 	add_child(player)
@@ -51,7 +55,21 @@ func _ready() -> void:
 	var ui := TouchUIScript.new()
 	layer.add_child(ui)
 	player.ui = ui
-	ui.home_pressed.connect(player.respawn)
+	ui.home_pressed.connect(_go_home)
+
+	_obby = ObbyScript.new()
+	_obby.position = Vector3(0, 40, -110)
+	_obby.player = player
+	_obby.sound = _sound
+	_obby.ui = ui
+	add_child(_obby)
+	_obby.go_home.connect(_go_home)
+	ui.stage_prev_pressed.connect(_obby.skip.bind(-1))
+	ui.stage_next_pressed.connect(_obby.skip.bind(1))
+	var portal := U.portal(self, Vector3(4, 0, 3), Basis.IDENTITY, RAINBOW)
+	portal.body_entered.connect(func(body: Node3D):
+		if body == player:
+			_obby.enter(), CONNECT_DEFERRED)
 	ui.music_pressed.connect(func():
 		_sound.toggle_music()
 		ui.music_on = _sound.music_on
@@ -60,6 +78,13 @@ func _ready() -> void:
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("--shot="):
 			_take_screenshot(arg.trim_prefix("--shot="))
+
+
+func _go_home() -> void:
+	_obby.leave()
+	_player.kill_y = -10.0
+	_player.respawn_point = SPAWN
+	_player.respawn()
 
 
 func _process(delta: float) -> void:
@@ -81,7 +106,7 @@ func _build_environment() -> void:
 	sky_mat.sky_top_color = Color(0.3, 0.58, 0.98)
 	sky_mat.sky_horizon_color = Color(0.72, 0.87, 1.0)
 	sky_mat.ground_horizon_color = Color(0.72, 0.87, 1.0)
-	sky_mat.ground_bottom_color = Color(0.35, 0.6, 0.3)
+	sky_mat.ground_bottom_color = Color(0.85, 0.9, 1.0)
 	var sky := Sky.new()
 	sky.sky_material = sky_mat
 	var env := Environment.new()

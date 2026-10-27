@@ -94,3 +94,22 @@ static func ramp_walls(parent: Node, from: Vector3, to: Vector3, width: float, c
 	for side: float in [-1.0, 1.0]:
 		var pos := center + basis.x * side * (width * 0.5 + 0.08)
 		solid_box(parent, Vector3(0.16, wall_height, dir.length()), Transform3D(basis, pos), color)
+
+
+## A rainbow arch with a glowing pad. Returns the Area3D that notices who walks in.
+static func portal(parent: Node, pos: Vector3, facing: Basis, colors: Array[Color]) -> Area3D:
+	var root := Node3D.new()
+	root.transform = Transform3D(facing, pos)
+	parent.add_child(root)
+	for k in 5:
+		var w := 2.8 - k * 0.3
+		var h := 3.2 - k * 0.15
+		var c := colors[k % colors.size()]
+		for side: float in [-1.0, 1.0]:
+			mesh_box(root, Vector3(0.15, h, 0.3), Vector3(side * w * 0.5, h * 0.5, 0), c)
+		mesh_box(root, Vector3(w + 0.15, 0.15, 0.3), Vector3(0, h, 0), c)
+	mesh_cylinder(root, 1.0, 0.06, Vector3(0, 0.03, 0), Color(0.75, 0.55, 1.0, 0.8))
+	var area := Area3D.new()
+	add_box_shape(area, Vector3(1.6, 2.0, 1.0), Vector3(0, 1.0, 0))
+	root.add_child(area)
+	return area

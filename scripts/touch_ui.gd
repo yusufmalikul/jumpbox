@@ -4,6 +4,8 @@ extends Control
 
 signal home_pressed
 signal music_pressed
+signal stage_prev_pressed
+signal stage_next_pressed
 
 const JOY_RADIUS := 120.0
 const KNOB_RADIUS := 52.0
@@ -14,6 +16,9 @@ var move_vector := Vector2.ZERO
 var jump_down := false
 ## Only used to draw the music button; main.gd keeps it in sync.
 var music_on := true
+## The stage number at the top, shown only on the sky course.
+var show_stage := false
+var stage := 0
 
 var _joy_touch := -1
 var _joy_center := Vector2.ZERO
@@ -52,6 +57,10 @@ func _music_center() -> Vector2:
 	return Vector2(size.x - 80, 80)
 
 
+func _stage_center() -> Vector2:
+	return Vector2(size.x * 0.5, 70)
+
+
 func _input(event: InputEvent) -> void:
 	if event is InputEventScreenTouch:
 		_on_touch(event)
@@ -67,6 +76,10 @@ func _on_touch(event: InputEventScreenTouch) -> void:
 			home_pressed.emit()
 		elif p.distance_to(_music_center()) < HOME_RADIUS * 1.4:
 			music_pressed.emit()
+		elif show_stage and p.distance_to(_stage_center() + Vector2(-130, 0)) < HOME_RADIUS * 1.3:
+			stage_prev_pressed.emit()
+		elif show_stage and p.distance_to(_stage_center() + Vector2(130, 0)) < HOME_RADIUS * 1.3:
+			stage_next_pressed.emit()
 		elif _jump_touch == -1 and p.distance_to(_jump_center()) < JUMP_RADIUS * 1.4:
 			_jump_touch = event.index
 			jump_down = true
@@ -131,3 +144,14 @@ func _draw() -> void:
 	draw_line(mc + Vector2(1, -20), mc + Vector2(16, -10), Color.WHITE, 5)
 	if not music_on:
 		draw_line(mc + Vector2(-26, -26), mc + Vector2(26, 26), Color(0.9, 0.1, 0.1), 7)
+
+	if show_stage:
+		var sc := _stage_center()
+		draw_circle(sc, 56, Color(1, 1, 1, 0.85))
+		var font := ThemeDB.fallback_font
+		var text := str(stage) if stage > 0 else "★"
+		draw_string(font, sc + Vector2(-60, 26), text, HORIZONTAL_ALIGNMENT_CENTER, 120, 72, Color(0.2, 0.2, 0.3))
+		for dir: float in [-1.0, 1.0]:
+			var c := sc + Vector2(130 * dir, 0)
+			draw_circle(c, 40, Color(0.3, 0.75, 1.0, 0.75))
+			draw_colored_polygon(PackedVector2Array([c + Vector2(18 * dir, 0), c + Vector2(-12 * dir, -20), c + Vector2(-12 * dir, 20)]), Color.WHITE)

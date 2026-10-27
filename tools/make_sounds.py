@@ -143,6 +143,18 @@ def sfx_home() -> np.ndarray:
     return fade_out(out)
 
 
+def sfx_checkpoint() -> np.ndarray:
+    d = 1.0
+    out = np.zeros(len(times(d)))
+    for i, n in enumerate([79, 84, 88, 91, 96]):  # G5 C6 E6 G6 C7
+        start = int(i * 0.06 * SR)
+        b = bell(midi(n), d - i * 0.06, 5)
+        out[start:start + len(b)] += b * (0.7 + 0.1 * i)
+    t = times(d)
+    sparkle = np.sin(phase(2400 + 800 * np.sin(2 * np.pi * 9 * t), d)) * env(d, 0.2, 5) * 0.15
+    return fade_out(out + sparkle)
+
+
 def sfx_fanfare() -> np.ndarray:
     notes = [(72, 0.12), (76, 0.12), (79, 0.12), (84, 0.7)]  # C5 E5 G5 C6
     total = sum(d for _, d in notes) + 0.3
@@ -239,7 +251,7 @@ def music() -> np.ndarray:
 def main() -> None:
     for name, fn in {
         "jump": sfx_jump, "boing": sfx_boing, "land": sfx_land, "step": sfx_step,
-        "slide": sfx_slide, "kick": sfx_kick, "sit": sfx_sit, "home": sfx_home, "fanfare": sfx_fanfare,
+        "slide": sfx_slide, "kick": sfx_kick, "sit": sfx_sit, "home": sfx_home, "fanfare": sfx_fanfare, "checkpoint": sfx_checkpoint,
     }.items():
         save(ROOT / "sfx" / f"{name}.wav", fn())
     save(ROOT / "music" / "park.wav", music(), peak=0.7)

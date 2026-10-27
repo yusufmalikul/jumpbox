@@ -4,6 +4,10 @@ An offline 3D playground game for little kids, made with Godot 4.7. One big park
 trampolines, slides, swings, a merry-go-round, a block tower and bouncy balls. There is
 no way to lose: just play.
 
+Walk through the rainbow portal to reach the **sky course**: easy jumps high above the
+clouds, up through 10 numbered checkpoints to a golden trophy. Gaps are short and steps
+are low, made for small kids. Fall into the clouds and you come back at your last checkpoint.
+
 [![JumpBox demo video](docs/demo.jpg)](docs/demo.mp4)
 
 ▶️ [Watch the demo video](docs/demo.mp4) (55 seconds, played on an Android phone)
@@ -24,6 +28,8 @@ Play Store; choose "Install anyway". All versions are on the
 - Drag on the right side: turn the camera
 - Home button (top left): go back to the start
 - Land on a swing seat to sit and swing; press jump to get off
+- On the sky course: the big number at the top is your checkpoint; the arrows next to it
+  jump to the previous or next checkpoint if a stage is too hard
 
 On a computer: WASD or arrows to move, Space to jump, Q/E to turn the camera.
 
@@ -57,5 +63,5 @@ godot --path . -- --shot=/tmp/shot.png          # save a screenshot after 2 seco
 ## Code
 
 The whole park is built from code in `scripts/main.gd`. `player.gd` is the character and
-camera, `touch_ui.gd` the on-screen controls, `rides.gd` the moving parts (swings,
+camera, `obby.gd` the sky course, `touch_ui.gd` the on-screen controls, `rides.gd` the moving parts (swings,
 merry-go-round), and `util.gd` small helpers for making blocks.

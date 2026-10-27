@@ -34,3 +34,19 @@ class Spinner extends AnimatableBody3D:
 
 	func _physics_process(delta: float) -> void:
 		rotate_y(speed * delta)
+
+
+## A platform that glides back and forth, slowing down at each end.
+class Mover extends AnimatableBody3D:
+	var start := Vector3.ZERO
+	var offset := Vector3.ZERO
+	var period := 6.0
+	var _t := 0.0
+
+	func _ready() -> void:
+		sync_to_physics = true
+		position = start
+
+	func _physics_process(delta: float) -> void:
+		_t += delta
+		position = start + offset * (0.5 - 0.5 * cos(TAU * _t / period))

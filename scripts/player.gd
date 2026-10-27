@@ -20,7 +20,10 @@ const PANTS := Color(0.2, 0.45, 0.9)
 var ui: Node
 ## The sound player (sound.gd). Set by main.gd.
 var sound: Node
-var spawn_point := Vector3.ZERO
+## Where you come back after falling or pressing home. The sky course moves it to its checkpoints.
+var respawn_point := Vector3.ZERO
+## Falling below this height sends you back to respawn_point.
+var kill_y := -10.0
 
 var _model: Node3D
 var _legs: Array[Node3D] = []
@@ -59,10 +62,15 @@ func _ready() -> void:
 
 
 func respawn() -> void:
-	global_position = spawn_point
+	teleport(respawn_point)
+	_sfx("home")
+
+
+func teleport(pos: Vector3) -> void:
+	global_position = pos
 	velocity = Vector3.ZERO
 	_seat = null
-	_sfx("home")
+	_cam_rig.global_position = pos + Vector3.UP * 1.3
 
 
 func _sfx(sound_name: String, volume_db := 0.0, pitch := 1.0) -> void:
@@ -176,7 +184,7 @@ func _physics_process(delta: float) -> void:
 		_sfx("land", -6.0)
 	_update_shadow()
 
-	if global_position.y < -10:
+	if global_position.y < kill_y:
 		respawn()
 
 
