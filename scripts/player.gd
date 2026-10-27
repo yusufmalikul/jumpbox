@@ -323,10 +323,7 @@ func _update_model(delta: float) -> void:
 		arm_angle = -2.6  # arms up: wheee!
 		leg_swing = 0.0 if on_slide else 0.35
 	elif speed > 0.5:
-		var before := sin(_walk_time)
 		_walk_time += delta * speed * 1.8
-		if signf(before) != signf(sin(_walk_time)):
-			_sfx("step", -14.0)
 		leg_swing = sin(_walk_time) * 0.7
 	for i in 2:
 		var s := 1.0 if i == 0 else -1.0

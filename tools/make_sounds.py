@@ -103,11 +103,6 @@ def sfx_land() -> np.ndarray:
     return fade_out(thump + dust)
 
 
-def sfx_step() -> np.ndarray:
-    d = 0.06
-    return fade_out(lowpass(noise(d, 5), 0.7) * env(d, 0.002, 60))
-
-
 def sfx_slide() -> np.ndarray:
     d = 1.0
     t = times(d)
@@ -277,7 +272,7 @@ def music() -> np.ndarray:
 
 def main() -> None:
     for name, fn in {
-        "jump": sfx_jump, "boing": sfx_boing, "land": sfx_land, "step": sfx_step,
+        "jump": sfx_jump, "boing": sfx_boing, "land": sfx_land,
         "slide": sfx_slide, "kick": sfx_kick, "sit": sfx_sit, "home": sfx_home, "fanfare": sfx_fanfare, "checkpoint": sfx_checkpoint, "lava": sfx_lava, "splash": sfx_splash,
     }.items():
         save(ROOT / "sfx" / f"{name}.wav", fn())

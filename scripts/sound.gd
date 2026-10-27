@@ -6,7 +6,6 @@ const SFX := {
 	"jump": preload("res://assets/sfx/jump.wav"),
 	"boing": preload("res://assets/sfx/boing.wav"),
 	"land": preload("res://assets/sfx/land.wav"),
-	"step": preload("res://assets/sfx/step.wav"),
 	"slide": preload("res://assets/sfx/slide.wav"),
 	"kick": preload("res://assets/sfx/kick.wav"),
 	"sit": preload("res://assets/sfx/sit.wav"),
