@@ -89,6 +89,12 @@ godot --path .                                  # play
 godot --path . -- --shot=/tmp/shot.png          # save a screenshot after 2 seconds and quit
 ```
 
+## Tests
+
+```bash
+godot --headless --path . -s tests/touch_test.gd   # touch buttons only react inside their circle
+```
+
 ## Code
 
 The whole park is built from code in `scripts/main.gd`. `player.gd` is the character and

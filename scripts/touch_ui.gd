@@ -11,6 +11,7 @@ const JOY_RADIUS := 120.0
 const KNOB_RADIUS := 52.0
 const JUMP_RADIUS := 100.0
 const HOME_RADIUS := 48.0
+const STAGE_ARROW_RADIUS := 40.0
 
 var move_vector := Vector2.ZERO
 var jump_down := false
@@ -72,15 +73,17 @@ func _input(event: InputEvent) -> void:
 func _on_touch(event: InputEventScreenTouch) -> void:
 	var p := event.position
 	if event.pressed:
-		if p.distance_to(_home_center()) < HOME_RADIUS * 1.4:
+		# Each button reacts only inside the circle you can see. Touches next to a
+		# button are for turning the camera.
+		if p.distance_to(_home_center()) < HOME_RADIUS:
 			home_pressed.emit()
-		elif p.distance_to(_music_center()) < HOME_RADIUS * 1.4:
+		elif p.distance_to(_music_center()) < HOME_RADIUS:
 			music_pressed.emit()
-		elif show_stage and p.distance_to(_stage_center() + Vector2(-130, 0)) < HOME_RADIUS * 1.3:
+		elif show_stage and p.distance_to(_stage_center() + Vector2(-130, 0)) < STAGE_ARROW_RADIUS:
 			stage_prev_pressed.emit()
-		elif show_stage and p.distance_to(_stage_center() + Vector2(130, 0)) < HOME_RADIUS * 1.3:
+		elif show_stage and p.distance_to(_stage_center() + Vector2(130, 0)) < STAGE_ARROW_RADIUS:
 			stage_next_pressed.emit()
-		elif _jump_touch == -1 and p.distance_to(_jump_center()) < JUMP_RADIUS * 1.4:
+		elif _jump_touch == -1 and p.distance_to(_jump_center()) < JUMP_RADIUS:
 			_jump_touch = event.index
 			jump_down = true
 		elif _joy_touch == -1 and p.x < size.x * 0.45:
@@ -157,5 +160,5 @@ func _draw() -> void:
 		draw_string(font, sc + Vector2(-60, 26), text, HORIZONTAL_ALIGNMENT_CENTER, 120, 72, Color(0.2, 0.2, 0.3))
 		for dir: float in [-1.0, 1.0]:
 			var c := sc + Vector2(130 * dir, 0)
-			draw_circle(c, 40, Color(0.3, 0.75, 1.0, 0.75))
+			draw_circle(c, STAGE_ARROW_RADIUS, Color(0.3, 0.75, 1.0, 0.75))
 			draw_colored_polygon(PackedVector2Array([c + Vector2(18 * dir, 0), c + Vector2(-12 * dir, -20), c + Vector2(-12 * dir, 20)]), Color.WHITE)
