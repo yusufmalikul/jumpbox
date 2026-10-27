@@ -6,6 +6,7 @@ const U := preload("res://scripts/util.gd")
 const Rides := preload("res://scripts/rides.gd")
 const PlayerScript := preload("res://scripts/player.gd")
 const TouchUIScript := preload("res://scripts/touch_ui.gd")
+const SoundScript := preload("res://scripts/sound.gd")
 
 const SPAWN := Vector3(0, 0.1, 8)
 const HALF_SIZE := 38.0
@@ -20,9 +21,12 @@ const RAINBOW: Array[Color] = [
 ]
 
 var _clouds: Array[Node3D] = []
+var _sound: Node
 
 
 func _ready() -> void:
+	_sound = SoundScript.new()
+	add_child(_sound)
 	_build_environment()
 	_build_ground()
 	_build_fence()
@@ -38,6 +42,7 @@ func _ready() -> void:
 
 	var player := PlayerScript.new()
 	player.spawn_point = SPAWN
+	player.sound = _sound
 	player.position = SPAWN
 	add_child(player)
 
@@ -47,6 +52,10 @@ func _ready() -> void:
 	layer.add_child(ui)
 	player.ui = ui
 	ui.home_pressed.connect(player.respawn)
+	ui.music_pressed.connect(func():
+		_sound.toggle_music()
+		ui.music_on = _sound.music_on
+		ui.queue_redraw())
 
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("--shot="):
@@ -235,6 +244,14 @@ func _build_block_tower(center: Vector3) -> void:
 		b.rotation.y = -a
 	U.mesh_box(self, Vector3(0.1, 2.0, 0.1), center + Vector3(0, top_h + 1.0, 0), Color(0.3, 0.3, 0.3))
 	U.mesh_box(self, Vector3(0.9, 0.55, 0.05), center + Vector3(0.45, top_h + 1.7, 0), RAINBOW[0])
+	# Reaching the top plays a fanfare.
+	var goal := Area3D.new()
+	goal.position = center + Vector3(0, top_h + 0.8, 0)
+	U.add_box_shape(goal, Vector3(2.6, 1.6, 2.6))
+	add_child(goal)
+	goal.body_entered.connect(func(body: Node3D):
+		if body is CharacterBody3D:
+			_sound.play("fanfare"))
 
 
 func _build_balls(center: Vector3) -> void:

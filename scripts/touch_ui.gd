@@ -3,6 +3,7 @@ extends Control
 ## and drag anywhere else to turn the camera. A home button sends you back to the start.
 
 signal home_pressed
+signal music_pressed
 
 const JOY_RADIUS := 120.0
 const KNOB_RADIUS := 52.0
@@ -11,6 +12,8 @@ const HOME_RADIUS := 48.0
 
 var move_vector := Vector2.ZERO
 var jump_down := false
+## Only used to draw the music button; main.gd keeps it in sync.
+var music_on := true
 
 var _joy_touch := -1
 var _joy_center := Vector2.ZERO
@@ -45,6 +48,10 @@ func _home_center() -> Vector2:
 	return Vector2(80, 80)
 
 
+func _music_center() -> Vector2:
+	return Vector2(size.x - 80, 80)
+
+
 func _input(event: InputEvent) -> void:
 	if event is InputEventScreenTouch:
 		_on_touch(event)
@@ -58,6 +65,8 @@ func _on_touch(event: InputEventScreenTouch) -> void:
 	if event.pressed:
 		if p.distance_to(_home_center()) < HOME_RADIUS * 1.4:
 			home_pressed.emit()
+		elif p.distance_to(_music_center()) < HOME_RADIUS * 1.4:
+			music_pressed.emit()
 		elif _jump_touch == -1 and p.distance_to(_jump_center()) < JUMP_RADIUS * 1.4:
 			_jump_touch = event.index
 			jump_down = true
@@ -113,3 +122,12 @@ func _draw() -> void:
 	draw_circle(hc, HOME_RADIUS, Color(0.3, 0.75, 1.0, 0.7))
 	draw_colored_polygon(PackedVector2Array([hc + Vector2(0, -26), hc + Vector2(26, -2), hc + Vector2(-26, -2)]), Color.WHITE)
 	draw_rect(Rect2(hc + Vector2(-17, -4), Vector2(34, 26)), Color.WHITE)
+
+	# Music button: a musical note, crossed out when the music is off.
+	var mc := _music_center()
+	draw_circle(mc, HOME_RADIUS, Color(0.95, 0.45, 0.75, 0.7))
+	draw_circle(mc + Vector2(-8, 14), 10, Color.WHITE)
+	draw_line(mc + Vector2(1, 14), mc + Vector2(1, -22), Color.WHITE, 5)
+	draw_line(mc + Vector2(1, -20), mc + Vector2(16, -10), Color.WHITE, 5)
+	if not music_on:
+		draw_line(mc + Vector2(-26, -26), mc + Vector2(26, 26), Color(0.9, 0.1, 0.1), 7)

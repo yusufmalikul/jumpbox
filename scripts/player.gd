@@ -18,6 +18,8 @@ const PANTS := Color(0.2, 0.45, 0.9)
 
 ## The touch UI (touch_ui.gd). Set by main.gd.
 var ui: Node
+## The sound player (sound.gd). Set by main.gd.
+var sound: Node
 var spawn_point := Vector3.ZERO
 
 var _model: Node3D
@@ -31,6 +33,8 @@ var _floor_obj: Object
 ## The swing seat we sit on, if any.
 var _seat: Node3D
 var _seat_cooldown := 0.0
+var _was_on_slide := false
+var _kick_cooldown := 0.0
 
 var _cam_yaw := 0.0
 var _cam_pitch := -0.3
@@ -57,6 +61,13 @@ func _ready() -> void:
 func respawn() -> void:
 	global_position = spawn_point
 	velocity = Vector3.ZERO
+	_seat = null
+	_sfx("home")
+
+
+func _sfx(sound_name: String, volume_db := 0.0, pitch := 1.0) -> void:
+	if sound:
+		sound.play(sound_name, volume_db, pitch)
 
 
 func _build_model() -> void:
@@ -122,6 +133,7 @@ func _read_jump() -> bool:
 
 func _physics_process(delta: float) -> void:
 	_seat_cooldown -= delta
+	_kick_cooldown -= delta
 	if _seat:
 		_ride_seat()
 		return
@@ -129,6 +141,9 @@ func _physics_process(delta: float) -> void:
 	var wish := Vector3(input.x, 0, input.y).rotated(Vector3.UP, _cam_yaw)
 	var on_floor := is_on_floor()
 	var on_slide := on_floor and _floor_obj != null and _floor_obj.has_meta("slide")
+	if on_slide and not _was_on_slide:
+		_sfx("slide", -2.0)
+	_was_on_slide = on_slide
 
 	_air_time = 0.0 if on_floor else _air_time + delta
 	if not on_floor:
@@ -152,9 +167,13 @@ func _physics_process(delta: float) -> void:
 	if _read_jump() and _air_time < COYOTE_TIME and velocity.y <= 0.5:
 		velocity.y = JUMP_SPEED
 		_air_time = COYOTE_TIME
+		_sfx("jump", -4.0)
 
+	var fall_speed := -velocity.y
 	move_and_slide()
-	_after_move()
+	var bounced := _after_move()
+	if not bounced and not on_floor and is_on_floor() and fall_speed > 6.0:
+		_sfx("land", -6.0)
 	_update_shadow()
 
 	if global_position.y < -10:
@@ -171,10 +190,13 @@ func _ride_seat() -> void:
 		_seat = null
 		_seat_cooldown = 0.8
 		_air_time = COYOTE_TIME
+		_sfx("jump", -4.0)
 		global_position.y += 0.1
 
 
-func _after_move() -> void:
+## Handles what we touched. Returns true if we bounced on a trampoline.
+func _after_move() -> bool:
+	var bounced := false
 	for i in get_slide_collision_count():
 		var c := get_slide_collision(i)
 		var obj := c.get_collider()
@@ -183,6 +205,7 @@ func _after_move() -> void:
 		var n := c.get_normal()
 		if n.y > 0.6 and obj.has_meta("seat") and _seat_cooldown <= 0.0:
 			_seat = obj
+			_sfx("sit")
 		if n.y > 0.6:
 			if obj.has_meta("bounce"):
 				var power: float = obj.get_meta("bounce")
@@ -191,10 +214,17 @@ func _after_move() -> void:
 				velocity.y = power
 				_squash = 1.0
 				_air_time = COYOTE_TIME
+				if not bounced:
+					_sfx("boing", 0.0, 1.25 - power * 0.025)  # bigger bounce, deeper boing
+				bounced = true
 		if obj is RigidBody3D:
 			var push := -n
 			push.y = 0.3
 			obj.apply_central_impulse(push * 1.2)
+			if _kick_cooldown <= 0.0:
+				_sfx("kick", -3.0)
+				_kick_cooldown = 0.3
+	return bounced
 
 
 func _process(delta: float) -> void:
@@ -237,7 +267,10 @@ func _update_model(delta: float) -> void:
 		arm_angle = -2.6  # arms up: wheee!
 		leg_swing = 0.0 if on_slide else 0.35
 	elif speed > 0.5:
+		var before := sin(_walk_time)
 		_walk_time += delta * speed * 1.8
+		if signf(before) != signf(sin(_walk_time)):
+			_sfx("step", -14.0)
 		leg_swing = sin(_walk_time) * 0.7
 	for i in 2:
 		var s := 1.0 if i == 0 else -1.0

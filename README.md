@@ -28,6 +28,12 @@ Android SDK (`brew install --cask android-commandlinetools`, then
 The first build makes a signing key in `~/.android/jumpbox-release.keystore`. Keep it
 safe: new versions only install over the old app if they are signed with the same key.
 
+## Sounds
+
+All sound effects and the music are made from math by `tools/make_sounds.py`
+(no downloaded audio). Change it, then run `uv run tools/make_sounds.py` to remake
+the files in `assets/`. The music button (top right) turns the music on and off.
+
 ## Run on the computer
 
 ```bash
