@@ -8,6 +8,15 @@ no way to lose: just play.
 
 ▶️ [Watch the demo video](docs/demo.mp4) (55 seconds, played on an Android phone)
 
+## Download
+
+📱 **[Download JumpBox.apk](https://github.com/yusufmalikul/jumpbox/releases/latest/download/JumpBox.apk)** (Android 7 or newer, 64-bit phones)
+
+Open the file on your phone to install it. Android may ask you to allow installs from
+your browser or file app, and Play Protect may warn because the app is not from the
+Play Store; choose "Install anyway". All versions are on the
+[Releases page](https://github.com/yusufmalikul/jumpbox/releases).
+
 ## Controls
 
 - Left side of the screen: joystick (it appears where your finger lands)
