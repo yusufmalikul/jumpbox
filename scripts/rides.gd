@@ -12,6 +12,7 @@ class SwingSeat extends AnimatableBody3D:
 
 	func _ready() -> void:
 		sync_to_physics = true
+		add_to_group("seats")
 		_place()
 
 	func _physics_process(delta: float) -> void:

@@ -45,12 +45,14 @@ var _floor_obj: Object
 ## The swing seat we sit on, if any.
 var _seat: Node3D
 var _seat_cooldown := 0.0
+## The seat we just got off. We only sit on it again after walking away from it.
+var _last_seat: Node3D
 ## The swim ring we sit in, if any (water park).
 var _float: Node3D
 var _float_cooldown := 0.0
-## True until the jump button is let go after getting into a ring, so holding jump
-## does not throw you right back out.
-var _float_wait_release := false
+## True until the jump button is let go after sitting on a swing or getting into a ring,
+## so holding jump does not throw you right back off.
+var _wait_release := false
 var _was_on_slide := false
 var _kick_cooldown := 0.0
 
@@ -117,6 +119,7 @@ func teleport(pos: Vector3) -> void:
 	global_position = pos
 	velocity = Vector3.ZERO
 	_seat = null
+	_model.rotation.x = 0.0
 	_leave_float()
 	_cam_rig.global_position = pos + Vector3.UP * 1.3
 
@@ -194,6 +197,7 @@ func _physics_process(delta: float) -> void:
 	_seat_cooldown -= delta
 	_kick_cooldown -= delta
 	_float_cooldown -= delta
+	_find_seat()
 	if _seat:
 		_ride_seat()
 		return
@@ -243,18 +247,48 @@ func _physics_process(delta: float) -> void:
 		respawn(fall_sound)
 
 
+## Walk into a swing seat (or land on it) to sit down. No need to jump right on top.
+func _find_seat() -> void:
+	if _seat or _float or _seat_cooldown > 0.0:
+		return
+	if _last_seat and is_instance_valid(_last_seat):
+		if _flat_distance(_last_seat.global_position) < 1.8:
+			return
+		_last_seat = null
+	for seat: Node3D in get_tree().get_nodes_in_group("seats"):
+		if not seat.is_visible_in_tree():
+			continue
+		var dy := global_position.y - seat.global_position.y
+		if _flat_distance(seat.global_position) < 1.2 and dy > -1.2 and dy < 1.0:
+			_seat = seat
+			_wait_release = _read_jump()
+			_sfx("sit")
+			return
+
+
+func _flat_distance(p: Vector3) -> float:
+	return Vector2(global_position.x - p.x, global_position.z - p.z).length()
+
+
 ## Sit still on the swing seat and move with it. Jump to get off.
 func _ride_seat() -> void:
-	global_position = _seat.global_position + _seat.global_basis.y * 0.08
+	# The hips (top of the legs, 0.75 above the feet) rest on top of the seat.
+	global_position = _seat.global_position + _seat.global_basis.y * (0.075 - 0.75)
 	velocity = Vector3.ZERO
 	_update_shadow()
-	if _read_jump():
-		velocity = Vector3.UP * JUMP_SPEED + _seat.global_basis.z * -3.0
+	if not _read_jump():
+		_wait_release = false
+	elif not _wait_release:
+		var forward := _seat.global_basis.z * -1.0
+		velocity = Vector3.UP * JUMP_SPEED + forward * 3.0
+		# Start from the front of the seat, clear of it.
+		global_position = _seat.global_position + Vector3.UP * 0.2 + forward * 0.7
+		_last_seat = _seat
 		_seat = null
-		_seat_cooldown = 0.8
+		_seat_cooldown = 0.5
 		_air_time = COYOTE_TIME
+		_model.rotation.x = 0.0
 		_sfx("jump", -4.0)
-		global_position.y += 0.1
 
 
 ## Sit in the swim ring. The joystick paddles it around; jump to get out.
@@ -266,8 +300,8 @@ func _ride_float() -> void:
 	velocity = Vector3.ZERO
 	_update_shadow()
 	if not _read_jump():
-		_float_wait_release = false
-	elif not _float_wait_release:
+		_wait_release = false
+	elif not _wait_release:
 		var forward := _float.global_basis.z * -1.0
 		_float.push_off(forward)
 		_leave_float()
@@ -296,13 +330,10 @@ func _after_move() -> bool:
 		if obj == null:
 			continue
 		var n := c.get_normal()
-		if n.y > 0.6 and obj.has_meta("seat") and _seat_cooldown <= 0.0:
-			_seat = obj
-			_sfx("sit")
 		if n.y > 0.6 and obj.has_meta("float") and _float_cooldown <= 0.0 and _float == null:
 			_float = obj
 			_float.ridden = true
-			_float_wait_release = _read_jump()
+			_wait_release = _read_jump()
 			_sfx("splash", -8.0)
 		if n.y > 0.6:
 			if obj.has_meta("bounce"):
@@ -360,6 +391,7 @@ func _update_model(delta: float) -> void:
 	var on_slide := _floor_obj != null and _floor_obj.has_meta("slide")
 	if _seat:
 		_model.rotation.y = _seat.global_rotation.y
+		_model.rotation.x = _seat.global_rotation.x  # swing back and forth with the seat
 		arm_angle = -2.9  # hold the ropes
 		leg_swing = -1.4  # legs forward, like sitting
 		for i in 2:
