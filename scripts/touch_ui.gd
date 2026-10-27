@@ -1,9 +1,11 @@
 extends Control
 ## On-screen controls: a joystick on the left, a big jump button on the right,
-## and drag anywhere else to turn the camera. A home button sends you back to the start.
+## and drag anywhere else to turn the camera. A home button sends you back to the start,
+## and the menu button opens the menu (menu.gd).
 
 signal home_pressed
 signal music_pressed
+signal menu_pressed
 signal stage_prev_pressed
 signal stage_next_pressed
 
@@ -58,6 +60,20 @@ func _music_center() -> Vector2:
 	return Vector2(size.x - 80, 80)
 
 
+func _menu_center() -> Vector2:
+	return Vector2(size.x - 190, 80)
+
+
+## Lets go of the joystick and the jump button, e.g. when the menu opens over them.
+func release_all() -> void:
+	_joy_touch = -1
+	_jump_touch = -1
+	_look_touch = -1
+	move_vector = Vector2.ZERO
+	jump_down = false
+	queue_redraw()
+
+
 func _stage_center() -> Vector2:
 	return Vector2(size.x * 0.5, 70)
 
@@ -79,6 +95,8 @@ func _on_touch(event: InputEventScreenTouch) -> void:
 			home_pressed.emit()
 		elif p.distance_to(_music_center()) < HOME_RADIUS:
 			music_pressed.emit()
+		elif p.distance_to(_menu_center()) < HOME_RADIUS:
+			menu_pressed.emit()
 		elif show_stage and p.distance_to(_stage_center() + Vector2(-130, 0)) < STAGE_ARROW_RADIUS:
 			stage_prev_pressed.emit()
 		elif show_stage and p.distance_to(_stage_center() + Vector2(130, 0)) < STAGE_ARROW_RADIUS:
@@ -147,6 +165,12 @@ func _draw() -> void:
 	draw_line(mc + Vector2(1, -20), mc + Vector2(16, -10), Color.WHITE, 5)
 	if not music_on:
 		draw_line(mc + Vector2(-26, -26), mc + Vector2(26, 26), Color(0.9, 0.1, 0.1), 7)
+
+	# Menu button: three white bars.
+	var menu_c := _menu_center()
+	draw_circle(menu_c, HOME_RADIUS, Color(0.55, 0.45, 0.9, 0.7))
+	for k in 3:
+		draw_rect(Rect2(menu_c + Vector2(-22, -16 + k * 13), Vector2(44, 7)), Color.WHITE)
 
 	# Version number, small at the bottom, so we know which build is installed.
 	var version := "v" + str(ProjectSettings.get_setting("application/config/version", "?"))

@@ -8,6 +8,7 @@ const U := preload("res://scripts/util.gd")
 const Rides := preload("res://scripts/rides.gd")
 const PlayerScript := preload("res://scripts/player.gd")
 const TouchUIScript := preload("res://scripts/touch_ui.gd")
+const MenuScript := preload("res://scripts/menu.gd")
 const SoundScript := preload("res://scripts/sound.gd")
 const Hats := preload("res://scripts/hats.gd")
 ## The jump courses: their script, where they are, and the icon over their door.
@@ -34,6 +35,7 @@ var _clouds: Array[Node3D] = []
 var _sound: Node
 var _player: Node
 var _ui: Node
+var _menu: Node
 ## The park content, hidden while you are on a course.
 var _park: Node3D
 ## Courses built so far, by name.
@@ -85,6 +87,12 @@ func _ready() -> void:
 		_sound.toggle_music()
 		ui.music_on = _sound.music_on
 		ui.queue_redraw())
+	var menu := MenuScript.new()
+	layer.add_child(menu)
+	_menu = menu
+	ui.menu_pressed.connect(func():
+		ui.release_all()
+		menu.open())
 
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("--shot="):

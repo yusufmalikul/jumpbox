@@ -67,7 +67,8 @@ Play Store; choose "Install anyway". All versions are on the
 - Yellow button: jump (hold it to keep jumping, and to bounce higher on trampolines)
 - Drag on the right side: turn the camera
 - Home button (top left): go back to the start
-- Land on a swing seat to sit and swing; press jump to get off
+- Menu button (three bars, top right): pause, read about the game, or close the app
+- Walk into a swing seat to sit and swing; press jump to get off
 - In the water park: jump onto a swim ring or duck float to sit in it, move with the
   joystick, press jump to get out
 - On the sky course: the big number at the top is your checkpoint; the arrows next to it
