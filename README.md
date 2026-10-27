@@ -36,7 +36,7 @@ Platforms are wide and gaps are short, made for small kids.
 
 | Water park | On the water slide |
 |---|---|
-| ![The water park: pool, swim rings, water jets and two curvy slides](docs/water-park.jpg) | ![Riding the orange water slide](docs/water-slide.jpg) |
+| ![Paddling a duck float in the water park, with swim rings, water jets and the slides](docs/water-park.jpg) | ![Riding the orange water slide](docs/water-slide.jpg) |
 
 | The park | Lava course |
 |---|---|
