@@ -8,6 +8,8 @@ no way to lose: just play.
 teddy bear, bunny ears and a flower hat. Walk up to one and you wear it right away. The
 game remembers your hat for next time.
 
+![The five hats: crown, snowman, teddy bear, bunny ears and flower hat](docs/hats.jpg)
+
 Two rainbow doors in the park lead to jump courses, each with 10 numbered checkpoints
 and a golden trophy at the end. Platforms are wide and gaps are short, made for small kids.
 
@@ -16,9 +18,12 @@ and a golden trophy at the end. Platforms are wide and gaps are short, made for 
 - 🔥 **Lava course** (flame over the door): hop across stones over a sea of lava, up to the
   top of a volcano. Touch the lava and you come back at your last checkpoint.
 
-| Lava course | The park doors |
+| The park | Lava course |
 |---|---|
-| ![Lava course](docs/lava-course.jpg) | ![Rainbow doors in the park](docs/park-doors.jpg) |
+| ![The park: rides in the middle, hat stands at the start, and a rainbow door on each side](docs/park.jpg) | ![Lava course](docs/lava-course.jpg) |
+
+The doors stand on the left and right of the start, away from the rides, with a sand
+path leading to each.
 
 Only one place is shown at a time (the park or the course you are in), and each course is
 built the first time you enter it. This keeps the game light on older phones.

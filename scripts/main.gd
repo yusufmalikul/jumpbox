@@ -12,8 +12,8 @@ const SoundScript := preload("res://scripts/sound.gd")
 const Hats := preload("res://scripts/hats.gd")
 ## The jump courses: their script, where they are, and the icon over their door.
 const COURSES := {
-	"sky": {"script": preload("res://scripts/sky_course.gd"), "pos": Vector3(0, 40, -110), "door": Vector3(4, 0, 3)},
-	"lava": {"script": preload("res://scripts/lava_course.gd"), "pos": Vector3(200, 0, 0), "door": Vector3(-5, 0, 5)},
+	"sky": {"script": preload("res://scripts/sky_course.gd"), "pos": Vector3(0, 40, -110), "door": Vector3(22, 0, 14)},
+	"lava": {"script": preload("res://scripts/lava_course.gd"), "pos": Vector3(200, 0, 0), "door": Vector3(-22, 0, 14)},
 }
 
 const SPAWN := Vector3(0, 0.1, 15)
@@ -160,7 +160,11 @@ func _build_hat_stands() -> void:
 
 func _build_door(course_name: String) -> void:
 	var pos: Vector3 = COURSES[course_name]["door"]
-	var door := U.portal(_park, pos, Basis.IDENTITY, RAINBOW)
+	# The doors stand away from the rides, facing the start, with a sand path leading to each.
+	var to_start := Vector3(SPAWN.x - pos.x, 0, SPAWN.z - pos.z)
+	var door := U.portal(_park, pos, Basis.looking_at(to_start, Vector3.UP), RAINBOW)
+	var path := U.mesh_box(_park, Vector3(2.4, 0.02, to_start.length()), pos + to_start * 0.5 + Vector3.UP * 0.012, SAND)
+	path.rotation.y = atan2(to_start.x, to_start.z)
 	door.body_entered.connect(func(body: Node3D):
 		if body == _player:
 			_enter_course(course_name), CONNECT_DEFERRED)
