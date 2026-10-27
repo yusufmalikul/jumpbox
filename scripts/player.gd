@@ -92,6 +92,11 @@ func respawn(sound_name := "home") -> void:
 	_sfx(sound_name)
 
 
+## Turns the camera to look along `dir` (only its flat part counts).
+func look_toward(dir: Vector3) -> void:
+	_cam_yaw = atan2(-dir.x, -dir.z)
+
+
 func teleport(pos: Vector3) -> void:
 	global_position = pos
 	velocity = Vector3.ZERO
@@ -274,6 +279,11 @@ func _update_camera(delta: float) -> void:
 		var look: Vector2 = ui.consume_look()
 		_cam_yaw -= look.x * 0.008
 		_cam_pitch = clampf(_cam_pitch - look.y * 0.006, -1.2, 0.25)
+	# While sliding fast, turn the camera to look where we go, so spirals are not confusing.
+	var on_slide := is_on_floor() and _floor_obj != null and _floor_obj.has_meta("slide")
+	var flat := Vector3(velocity.x, 0, velocity.z)
+	if on_slide and flat.length() > 3.0:
+		_cam_yaw = lerp_angle(_cam_yaw, atan2(-flat.x, -flat.z), 1.0 - exp(-4.0 * delta))
 	if Input.is_key_pressed(KEY_Q): _cam_yaw += 2.0 * delta
 	if Input.is_key_pressed(KEY_E): _cam_yaw -= 2.0 * delta
 	var target := global_position + Vector3.UP * 1.3

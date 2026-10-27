@@ -10,20 +10,29 @@ game remembers your hat for next time.
 
 ![The five hats: crown, snowman, teddy bear, bunny ears and flower hat](docs/hats.jpg)
 
-Two rainbow doors in the park lead to jump courses, each with 10 numbered checkpoints
-and a golden trophy at the end. Platforms are wide and gaps are short, made for small kids.
+Three rainbow doors in the park lead to bigger adventures. The two jump courses (an
+"obby" in Roblox words) each have 10 numbered checkpoints and a golden trophy at the end.
+Platforms are wide and gaps are short, made for small kids.
 
 - ☁️ **Sky course** (cloud over the door): easy jumps high above the clouds. Fall into the
   clouds and you come back at your last checkpoint.
 - 🔥 **Lava course** (flame over the door): hop across stones over a sea of lava, up to the
   top of a volcano. Touch the lava and you come back at your last checkpoint.
+- 🌀 **Giant spiral slide** (little slide over the door, behind the start): you arrive on
+  top of a 40 m rainbow tower and slide down five big turns around it, about 20 seconds
+  from top to bottom. The camera turns with you. At the bottom, one door takes you up
+  again and one takes you home.
+
+| The giant spiral slide | Sliding down |
+|---|---|
+| ![A 40 m rainbow tower with a spiral slide around it](docs/slide-tower.jpg) | ![Sliding down the spiral](docs/slide-ride.jpg) |
 
 | The park | Lava course |
 |---|---|
 | ![The park: rides in the middle, hat stands at the start, and a rainbow door on each side](docs/park.jpg) | ![Lava course](docs/lava-course.jpg) |
 
-The doors stand on the left and right of the start, away from the rides, with a sand
-path leading to each.
+The doors stand away from the rides: lava on the left, sky on the right and the spiral
+slide behind the start, each with a sand path leading to it.
 
 Only one place is shown at a time (the park or the course you are in), and each course is
 built the first time you enter it. This keeps the game light on older phones.
@@ -84,5 +93,5 @@ godot --path . -- --shot=/tmp/shot.png          # save a screenshot after 2 seco
 
 The whole park is built from code in `scripts/main.gd`. `player.gd` is the character and
 camera, `course.gd` the shared course logic (checkpoints, platforms) with `sky_course.gd`
-and `lava_course.gd` laying out each course, `hats.gd` the hats, `touch_ui.gd` the on-screen controls, `rides.gd` the moving parts (swings,
+and `lava_course.gd` laying out each course, `slide_course.gd` the spiral slide, `hats.gd` the hats, `touch_ui.gd` the on-screen controls, `rides.gd` the moving parts (swings,
 merry-go-round), and `util.gd` small helpers for making blocks.

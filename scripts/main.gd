@@ -14,6 +14,7 @@ const Hats := preload("res://scripts/hats.gd")
 const COURSES := {
 	"sky": {"script": preload("res://scripts/sky_course.gd"), "pos": Vector3(0, 40, -110), "door": Vector3(22, 0, 14)},
 	"lava": {"script": preload("res://scripts/lava_course.gd"), "pos": Vector3(200, 0, 0), "door": Vector3(-22, 0, 14)},
+	"slide": {"script": preload("res://scripts/slide_course.gd"), "pos": Vector3(-200, 0, 0), "door": Vector3(0, 0, 25)},
 }
 
 const SPAWN := Vector3(0, 0.1, 15)
@@ -172,7 +173,14 @@ func _build_door(course_name: String) -> void:
 	icon.position = pos + Vector3(0, 4.3, 0)
 	_park.add_child(icon)
 	_icons.append(icon)
-	if course_name == "sky":
+	if course_name == "slide":
+		# A little spiral slide around a white pole.
+		U.mesh_box(icon, Vector3(0.14, 1.4, 0.14), Vector3.ZERO, WHITE)
+		for k in 10:
+			var a := k * 0.7
+			var step := U.mesh_box(icon, Vector3(0.32, 0.08, 0.2), Vector3(cos(a) * 0.32, 0.6 - k * 0.13, sin(a) * 0.32), RAINBOW[k % RAINBOW.size()])
+			step.rotation.y = -a
+	elif course_name == "sky":
 		# A cloud.
 		U.mesh_box(icon, Vector3(1.6, 0.6, 0.5), Vector3(0, 0, 0), WHITE)
 		U.mesh_box(icon, Vector3(0.8, 0.6, 0.5), Vector3(-0.35, 0.4, 0), WHITE)
