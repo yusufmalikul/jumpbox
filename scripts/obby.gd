@@ -7,6 +7,10 @@ const U := preload("res://scripts/util.gd")
 const Rides := preload("res://scripts/rides.gd")
 
 const CHECKPOINTS := 10
+## Platform width and depth, and the gap between platforms. Wide and close, for small kids.
+const W := 5.0
+const D := 4.0
+const GAP := 0.8
 const PAD := Color(0.85, 0.86, 0.9)
 const COLORS: Array[Color] = [
 	Color(0.95, 0.3, 0.3), Color(1.0, 0.6, 0.15), Color(1.0, 0.85, 0.2), Color(0.4, 0.8, 0.3),
@@ -39,61 +43,61 @@ func _ready() -> void:
 	_start()
 	_stage(1)
 	for i in 4:
-		_plat(3.0, 3.0, 1.0, 0.4)
+		_plat(W, D, GAP, 0.4)
 	_checkpoint()
 
 	_stage(2)  # zig-zag
 	for i in 5:
-		_plat(2.8, 2.8, 0.9, 0.4, 1.4 if i % 2 == 0 else -1.4)
+		_plat(W, D, GAP, 0.4, 1.2 if i % 2 == 0 else -1.2)
 	_checkpoint()
 
 	_turn(90)
 	_stage(3)  # stairs, no gaps
 	for i in 7:
-		_plat(3.2, 1.4, 0.0, 0.5)
+		_plat(W + 1.0, 1.4, 0.0, 0.5)
 	_checkpoint()
 
 	_stage(4)  # a trampoline up to a high ledge
-	_plat(3.0, 3.0, 1.0, 0.0)
-	_bouncer(1.0)
-	_plat(4.0, 4.0, 0.8, 3.0)
+	_plat(W, D, GAP, 0.0)
+	_bouncer(GAP)
+	_plat(W + 1.0, W, 0.6, 3.0)
 	_checkpoint()
 
 	_turn(90)
 	_stage(5)  # a platform that slowly carries you across
 	_mover(5.0)
-	_plat(3.0, 3.0, 0.4, 0.0)
+	_plat(W, D, 0.3, 0.0)
 	_checkpoint()
 
 	_stage(6)  # a wide bridge with a bump
-	_plat(2.6, 6.0, 1.0, 0.0)
-	_plat(2.6, 2.0, 0.0, 0.5)
-	_plat(2.6, 6.0, 0.0, 0.5)
+	_plat(W, 6.0, GAP, 0.0)
+	_plat(W, 2.0, 0.0, 0.5)
+	_plat(W, 6.0, 0.0, 0.5)
 	_checkpoint()
 
 	_turn(-90)
 	_stage(7)  # round stepping stones
 	for i in 6:
-		_stone(1.4, 0.9, 0.3, 1.0 if i % 3 == 1 else (-1.0 if i % 3 == 2 else 0.0))
+		_stone(2.2, GAP, 0.3, 0.8 if i % 3 == 1 else (-0.8 if i % 3 == 2 else 0.0))
 	_checkpoint()
 
 	_stage(8)  # a gentle spiral up
 	for i in 8:
 		_turn(25)
-		_plat(2.8, 2.8, 0.9, 0.5)
+		_plat(W, D, GAP, 0.5)
 	_checkpoint()
 
 	_turn(90)
 	_stage(9)  # two trampolines
-	_bouncer(1.0)
-	_plat(3.5, 3.5, 0.8, 2.5)
-	_bouncer(0.8)
-	_plat(4.0, 4.0, 0.8, 2.5)
+	_bouncer(GAP)
+	_plat(W + 1.0, W, 0.6, 2.5)
+	_bouncer(0.6)
+	_plat(W + 1.0, W, 0.6, 2.5)
 	_checkpoint()
 
 	_stage(10)  # the big stairs to the top
 	for i in 8:
-		_plat(4.0, 1.4, 0.0, 0.5)
+		_plat(W + 2.0, 1.4, 0.0, 0.5)
 	_checkpoint(true)
 	_build_cloud_floor()
 
@@ -176,30 +180,32 @@ func _stone(radius: float, gap: float, rise: float, side: float) -> void:
 
 
 func _bouncer(gap: float) -> void:
-	var top := _p + _dir * (_half + gap + 1.6)
-	U.solid_cylinder(self, 1.6, 0.6, top + Vector3.DOWN * 0.4, Color(0.55, 0.4, 0.9))
-	var pad := U.solid_cylinder(self, 1.35, 0.1, top + Vector3.DOWN * 0.05, Color(0.15, 0.15, 0.2))
+	var radius := 2.4
+	var top := _p + _dir * (_half + gap + radius)
+	U.solid_cylinder(self, radius, 0.6, top + Vector3.DOWN * 0.4, Color(0.55, 0.4, 0.9))
+	var pad := U.solid_cylinder(self, radius - 0.3, 0.1, top + Vector3.DOWN * 0.05, Color(0.15, 0.15, 0.2))
 	pad.set_meta("bounce", 13.0)
 	_p = top
-	_half = 1.6
+	_half = radius
 	path.append([global_position + _p, spots.size()])
 
 
 ## A platform that glides back and forth over `distance` metres.
 func _mover(distance: float) -> void:
-	var start := _p + _dir * (_half + 0.4 + 1.5)
+	var size := W
+	var start := _p + _dir * (_half + 0.3 + size * 0.5)
 	var mover := Rides.Mover.new()
 	mover.start = start + Vector3.DOWN * 0.3
 	mover.offset = _dir * distance
-	mover.period = 7.0
+	mover.period = 9.0
 	mover.basis = Basis.looking_at(_dir, Vector3.UP)
-	U.mesh_box(mover, Vector3(3, 0.6, 3), Vector3.ZERO, _color)
-	U.add_box_shape(mover, Vector3(3, 0.6, 3))
+	U.mesh_box(mover, Vector3(size, 0.6, size), Vector3.ZERO, _color)
+	U.add_box_shape(mover, Vector3(size, 0.6, size))
 	add_child(mover)
 	path.append([global_position + start, spots.size()])
 	path.append([global_position + start + _dir * distance, spots.size()])
 	_p = start + _dir * distance
-	_half = 1.5
+	_half = size * 0.5
 
 
 func _start() -> void:
@@ -212,8 +218,8 @@ func _start() -> void:
 
 
 func _checkpoint(final := false) -> void:
-	var size := 7.0 if final else 5.0
-	_plat(size, size, 1.0, 0.3, 0.0, PAD)
+	var size := 8.0 if final else 6.0
+	_plat(size, size, GAP, 0.3, 0.0, PAD)
 	var i := spots.size()
 	spots.append(global_position + _p + Vector3.UP * 0.1)
 	U.mesh_box(self, Vector3(size - 1.4, 0.04, size - 1.4), _p + Vector3.UP * 0.02, Color.WHITE)

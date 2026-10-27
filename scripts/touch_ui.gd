@@ -145,6 +145,10 @@ func _draw() -> void:
 	if not music_on:
 		draw_line(mc + Vector2(-26, -26), mc + Vector2(26, 26), Color(0.9, 0.1, 0.1), 7)
 
+	# Version number, small at the bottom, so we know which build is installed.
+	var version := "v" + str(ProjectSettings.get_setting("application/config/version", "?"))
+	draw_string(ThemeDB.fallback_font, Vector2(0, size.y - 14), version, HORIZONTAL_ALIGNMENT_CENTER, size.x, 22, Color(1, 1, 1, 0.75))
+
 	if show_stage:
 		var sc := _stage_center()
 		draw_circle(sc, 56, Color(1, 1, 1, 0.85))
