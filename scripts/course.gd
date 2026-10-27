@@ -1,7 +1,8 @@
 extends Node3D
-## A course of easy jumps high in the sky, going up through 10 numbered checkpoints.
-## You get here through the rainbow portal in the park. Fall into the clouds and you
-## come back at the last checkpoint. Gaps are short and steps are low, made for small kids.
+## Base for the jump courses: 10 numbered checkpoints from a start pad to a trophy.
+## A course is built the first time you enter it, and hidden (and taken out of physics)
+## while you are somewhere else. Fall too low and you come back at the last checkpoint.
+## Subclasses lay out the platforms in _layout() and make the floor in _build_floor().
 
 const U := preload("res://scripts/util.gd")
 const Rides := preload("res://scripts/rides.gd")
@@ -11,7 +12,6 @@ const CHECKPOINTS := 10
 const W := 5.0
 const D := 4.0
 const GAP := 0.8
-const PAD := Color(0.85, 0.86, 0.9)
 const COLORS: Array[Color] = [
 	Color(0.95, 0.3, 0.3), Color(1.0, 0.6, 0.15), Color(1.0, 0.85, 0.2), Color(0.4, 0.8, 0.3),
 	Color(0.25, 0.65, 0.95), Color(0.55, 0.4, 0.9), Color(0.95, 0.45, 0.75),
@@ -31,6 +31,14 @@ var path: Array = []
 var current := 0
 var active := false
 
+## Falling this far below the start pad sends you back.
+var kill_depth := 8.0
+## The sound for falling off.
+var fall_sound := "home"
+## Colors for the stages, in turn, and for the checkpoint pads.
+var palette: Array[Color] = COLORS
+var pad_color := Color(0.85, 0.86, 0.9)
+
 # Building state: the top-center of the last platform, which way the course goes,
 # and how far the last platform reaches along that way.
 var _p := Vector3.ZERO
@@ -41,71 +49,25 @@ var _color := Color.WHITE
 
 func _ready() -> void:
 	_start()
-	_stage(1)
-	for i in 4:
-		_plat(W, D, GAP, 0.4)
-	_checkpoint()
+	_layout()
+	_build_floor()
 
-	_stage(2)  # zig-zag
-	for i in 5:
-		_plat(W, D, GAP, 0.4, 1.2 if i % 2 == 0 else -1.2)
-	_checkpoint()
 
-	_turn(90)
-	_stage(3)  # stairs, no gaps
-	for i in 7:
-		_plat(W + 1.0, 1.4, 0.0, 0.5)
-	_checkpoint()
+func _layout() -> void:
+	pass
 
-	_stage(4)  # a trampoline up to a high ledge
-	_plat(W, D, GAP, 0.0)
-	_bouncer(GAP)
-	_plat(W + 1.0, W, 0.6, 3.0)
-	_checkpoint()
 
-	_turn(90)
-	_stage(5)  # a platform that slowly carries you across
-	_mover(5.0)
-	_plat(W, D, 0.3, 0.0)
-	_checkpoint()
-
-	_stage(6)  # a wide bridge with a bump
-	_plat(W, 6.0, GAP, 0.0)
-	_plat(W, 2.0, 0.0, 0.5)
-	_plat(W, 6.0, 0.0, 0.5)
-	_checkpoint()
-
-	_turn(-90)
-	_stage(7)  # round stepping stones
-	for i in 6:
-		_stone(2.2, GAP, 0.3, 0.8 if i % 3 == 1 else (-0.8 if i % 3 == 2 else 0.0))
-	_checkpoint()
-
-	_stage(8)  # a gentle spiral up
-	for i in 8:
-		_turn(25)
-		_plat(W, D, GAP, 0.5)
-	_checkpoint()
-
-	_turn(90)
-	_stage(9)  # two trampolines
-	_bouncer(GAP)
-	_plat(W + 1.0, W, 0.6, 2.5)
-	_bouncer(0.6)
-	_plat(W + 1.0, W, 0.6, 2.5)
-	_checkpoint()
-
-	_stage(10)  # the big stairs to the top
-	for i in 8:
-		_plat(W + 2.0, 1.4, 0.0, 0.5)
-	_checkpoint(true)
-	_build_cloud_floor()
+func _build_floor() -> void:
+	pass
 
 
 ## Sends the player to the course, at the last checkpoint they reached.
 func enter() -> void:
 	active = true
-	player.kill_y = global_position.y - 8.0
+	visible = true
+	process_mode = Node.PROCESS_MODE_INHERIT
+	player.kill_y = global_position.y - kill_depth
+	player.fall_sound = fall_sound
 	_go_to(current)
 	ui.show_stage = true
 	ui.stage = current
@@ -114,6 +76,8 @@ func enter() -> void:
 
 func leave() -> void:
 	active = false
+	visible = false
+	process_mode = Node.PROCESS_MODE_DISABLED
 	ui.show_stage = false
 	ui.queue_redraw()
 
@@ -148,7 +112,7 @@ func _on_checkpoint(body: Node3D, i: int) -> void:
 # ---------- building ----------
 
 func _stage(n: int) -> void:
-	_color = COLORS[(n - 1) % COLORS.size()]
+	_color = palette[(n - 1) % palette.size()]
 
 
 func _turn(degrees: float) -> void:
@@ -190,6 +154,23 @@ func _bouncer(gap: float) -> void:
 	path.append([global_position + _p, spots.size()])
 
 
+## A platform that slides side to side across the path, so you wait for it to come close.
+func _side_mover(amplitude: float) -> void:
+	var size := W
+	var center := _p + _dir * (_half + GAP + size * 0.5)
+	var mover := Rides.Mover.new()
+	mover.start = center - _right() * amplitude + Vector3.DOWN * 0.3
+	mover.offset = _right() * amplitude * 2.0
+	mover.period = 8.0
+	mover.basis = Basis.looking_at(_dir, Vector3.UP)
+	U.mesh_box(mover, Vector3(size, 0.6, size), Vector3.ZERO, _color)
+	U.add_box_shape(mover, Vector3(size, 0.6, size))
+	add_child(mover)
+	_p = center
+	_half = size * 0.5
+	path.append([global_position + _p, spots.size(), mover])
+
+
 ## A platform that glides back and forth over `distance` metres.
 func _mover(distance: float) -> void:
 	var size := W
@@ -202,8 +183,9 @@ func _mover(distance: float) -> void:
 	U.mesh_box(mover, Vector3(size, 0.6, size), Vector3.ZERO, _color)
 	U.add_box_shape(mover, Vector3(size, 0.6, size))
 	add_child(mover)
-	path.append([global_position + start, spots.size()])
-	path.append([global_position + start + _dir * distance, spots.size()])
+	# For the test bot: wait for the mover at its near end, ride it to the far end.
+	path.append([global_position + start, spots.size(), mover])
+	path.append([global_position + start + _dir * distance, spots.size(), mover])
 	_p = start + _dir * distance
 	_half = size * 0.5
 
@@ -211,7 +193,7 @@ func _mover(distance: float) -> void:
 func _start() -> void:
 	_p = Vector3.ZERO
 	_half = 0.0
-	U.block(self, Vector3(6, 0.6, 6), Vector3(0, -0.3, 0), PAD)
+	U.block(self, Vector3(6, 0.6, 6), Vector3(0, -0.3, 0), pad_color)
 	U.mesh_box(self, Vector3(4, 0.04, 4), Vector3(0, 0.02, 0), Color.WHITE)
 	_half = 3.0
 	spots.append(global_position + Vector3(0, 0.1, 0))
@@ -219,7 +201,7 @@ func _start() -> void:
 
 func _checkpoint(final := false) -> void:
 	var size := 8.0 if final else 6.0
-	_plat(size, size, GAP, 0.3, 0.0, PAD)
+	_plat(size, size, GAP, 0.3, 0.0, pad_color)
 	var i := spots.size()
 	spots.append(global_position + _p + Vector3.UP * 0.1)
 	U.mesh_box(self, Vector3(size - 1.4, 0.04, size - 1.4), _p + Vector3.UP * 0.02, Color.WHITE)
@@ -267,27 +249,14 @@ func _build_trophy() -> void:
 			go_home.emit(), CONNECT_DEFERRED)
 
 
-func _build_cloud_floor() -> void:
-	var rng := RandomNumberGenerator.new()
-	rng.seed = 11
+## The area the course covers (from the checkpoints), plus a margin. Used to size floors.
+func _bounds(margin: float) -> AABB:
 	var lo := Vector3.INF
 	var hi := -Vector3.INF
-	for s in spots:
-		lo = lo.min(s - global_position)
-		hi = hi.max(s - global_position)
-	lo -= Vector3(25, 0, 25)
-	hi += Vector3(25, 0, 25)
-	# A sea of clouds. A plane only shows its top side, so from the park it is invisible.
-	var sea := PlaneMesh.new()
-	sea.size = Vector2(hi.x - lo.x + 300, hi.z - lo.z + 300)
-	var sea_mi := MeshInstance3D.new()
-	sea_mi.mesh = sea
-	sea_mi.material_override = U.mat(Color(0.9, 0.94, 1.0))
-	sea_mi.position = Vector3((lo.x + hi.x) * 0.5, -13, (lo.z + hi.z) * 0.5)
-	add_child(sea_mi)
-	for i in 50:
-		var p := Vector3(rng.randf_range(lo.x, hi.x), rng.randf_range(-14, -11), rng.randf_range(lo.z, hi.z))
-		U.mesh_box(self, Vector3(rng.randf_range(8, 16), rng.randf_range(1.5, 3), rng.randf_range(6, 12)), p, Color(1, 1, 1))
+	for spot in spots:
+		lo = lo.min(spot - global_position)
+		hi = hi.max(spot - global_position)
+	return AABB(lo - Vector3(margin, 0, margin), hi - lo + Vector3(margin * 2, 0, margin * 2))
 
 
 func _confetti(pos: Vector3, amount: int) -> void:

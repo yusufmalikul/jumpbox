@@ -24,6 +24,8 @@ var sound: Node
 var respawn_point := Vector3.ZERO
 ## Falling below this height sends you back to respawn_point.
 var kill_y := -10.0
+## The sound for falling below kill_y.
+var fall_sound := "home"
 
 var _model: Node3D
 var _legs: Array[Node3D] = []
@@ -61,9 +63,9 @@ func _ready() -> void:
 	_build_shadow()
 
 
-func respawn() -> void:
+func respawn(sound_name := "home") -> void:
 	teleport(respawn_point)
-	_sfx("home")
+	_sfx(sound_name)
 
 
 func teleport(pos: Vector3) -> void:
@@ -185,7 +187,7 @@ func _physics_process(delta: float) -> void:
 	_update_shadow()
 
 	if global_position.y < kill_y:
-		respawn()
+		respawn(fall_sound)
 
 
 ## Sit still on the swing seat and move with it. Jump to get off.

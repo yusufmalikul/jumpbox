@@ -1,5 +1,7 @@
 extends Node3D
 ## Builds the whole playground from code: sky, ground, rides, the player and the touch controls.
+## Rainbow doors in the park lead to the jump courses. Only one place is shown at a time:
+## the park, or the course you are in. Each course is built the first time you enter it.
 ## Run with `-- --shot=/path/to/file.png` to save a screenshot after a few seconds and quit.
 
 const U := preload("res://scripts/util.gd")
@@ -7,7 +9,11 @@ const Rides := preload("res://scripts/rides.gd")
 const PlayerScript := preload("res://scripts/player.gd")
 const TouchUIScript := preload("res://scripts/touch_ui.gd")
 const SoundScript := preload("res://scripts/sound.gd")
-const ObbyScript := preload("res://scripts/obby.gd")
+## The jump courses: their script, where they are, and the icon over their door.
+const COURSES := {
+	"sky": {"script": preload("res://scripts/sky_course.gd"), "pos": Vector3(0, 40, -110), "door": Vector3(4, 0, 3)},
+	"lava": {"script": preload("res://scripts/lava_course.gd"), "pos": Vector3(200, 0, 0), "door": Vector3(-5, 0, 5)},
+}
 
 const SPAWN := Vector3(0, 0.1, 8)
 const HALF_SIZE := 38.0
@@ -24,13 +30,22 @@ const RAINBOW: Array[Color] = [
 var _clouds: Array[Node3D] = []
 var _sound: Node
 var _player: Node
-var _obby: Node
+var _ui: Node
+## The park content, hidden while you are on a course.
+var _park: Node3D
+## Courses built so far, by name.
+var _courses := {}
+## The course you are on, or null in the park.
+var _active: Node
+var _icons: Array[Node3D] = []
 
 
 func _ready() -> void:
 	_sound = SoundScript.new()
 	add_child(_sound)
 	_build_environment()
+	_park = Node3D.new()
+	add_child(_park)
 	_build_ground()
 	_build_fence()
 	_build_trampolines()
@@ -42,6 +57,8 @@ func _ready() -> void:
 	_build_balls(Vector3(-1, 0, 1))
 	_build_trees()
 	_build_clouds()
+	for course_name in COURSES:
+		_build_door(course_name)
 
 	var player := PlayerScript.new()
 	_player = player
@@ -57,19 +74,9 @@ func _ready() -> void:
 	player.ui = ui
 	ui.home_pressed.connect(_go_home)
 
-	_obby = ObbyScript.new()
-	_obby.position = Vector3(0, 40, -110)
-	_obby.player = player
-	_obby.sound = _sound
-	_obby.ui = ui
-	add_child(_obby)
-	_obby.go_home.connect(_go_home)
-	ui.stage_prev_pressed.connect(_obby.skip.bind(-1))
-	ui.stage_next_pressed.connect(_obby.skip.bind(1))
-	var portal := U.portal(self, Vector3(4, 0, 3), Basis.IDENTITY, RAINBOW)
-	portal.body_entered.connect(func(body: Node3D):
-		if body == player:
-			_obby.enter(), CONNECT_DEFERRED)
+	_ui = ui
+	ui.stage_prev_pressed.connect(_skip_stage.bind(-1))
+	ui.stage_next_pressed.connect(_skip_stage.bind(1))
 	ui.music_pressed.connect(func():
 		_sound.toggle_music()
 		ui.music_on = _sound.music_on
@@ -80,14 +87,75 @@ func _ready() -> void:
 			_take_screenshot(arg.trim_prefix("--shot="))
 
 
+func _enter_course(course_name: String) -> void:
+	if _active:
+		return
+	var course: Node = _courses.get(course_name)
+	if course == null:
+		var info: Dictionary = COURSES[course_name]
+		course = info["script"].new()
+		course.position = info["pos"]
+		course.player = _player
+		course.sound = _sound
+		course.ui = _ui
+		course.go_home.connect(_go_home)
+		add_child(course)
+		_courses[course_name] = course
+	_set_park_shown(false)
+	_active = course
+	course.enter()
+
+
+func _skip_stage(step: int) -> void:
+	if _active:
+		_active.skip(step)
+
+
 func _go_home() -> void:
-	_obby.leave()
+	if _active:
+		_active.leave()
+		_active = null
+	_set_park_shown(true)
 	_player.kill_y = -10.0
 	_player.respawn_point = SPAWN
+	_player.fall_sound = "home"
 	_player.respawn()
 
 
+## Hiding the park and taking it out of physics keeps the phone fast while on a course.
+func _set_park_shown(shown: bool) -> void:
+	_park.visible = shown
+	_park.process_mode = Node.PROCESS_MODE_INHERIT if shown else Node.PROCESS_MODE_DISABLED
+
+
+func _build_door(course_name: String) -> void:
+	var pos: Vector3 = COURSES[course_name]["door"]
+	var door := U.portal(_park, pos, Basis.IDENTITY, RAINBOW)
+	door.body_entered.connect(func(body: Node3D):
+		if body == _player:
+			_enter_course(course_name), CONNECT_DEFERRED)
+	var icon := Node3D.new()
+	icon.position = pos + Vector3(0, 4.3, 0)
+	_park.add_child(icon)
+	_icons.append(icon)
+	if course_name == "sky":
+		# A cloud.
+		U.mesh_box(icon, Vector3(1.6, 0.6, 0.5), Vector3(0, 0, 0), WHITE)
+		U.mesh_box(icon, Vector3(0.8, 0.6, 0.5), Vector3(-0.35, 0.4, 0), WHITE)
+		U.mesh_box(icon, Vector3(0.7, 0.5, 0.5), Vector3(0.35, 0.3, 0), WHITE)
+	else:
+		# A flame: red outside, orange, then yellow inside.
+		var flame := [[Color(0.95, 0.2, 0.1), 1.0, 0.0], [Color(1.0, 0.55, 0.1), 0.7, 0.06], [Color(1.0, 0.9, 0.3), 0.4, 0.12]]
+		for f in flame:
+			var b := U.mesh_box(icon, Vector3(f[1], f[1], 0.3 + f[2] * 2), Vector3(0, -0.15 + f[2], 0), f[0])
+			b.rotation.z = PI * 0.25
+			U.mesh_box(icon, Vector3(f[1] * 0.45, f[1] * 0.8, 0.3 + f[2] * 2), Vector3(0, 0.55 + f[2] * 0.5, 0), f[0])
+
+
 func _process(delta: float) -> void:
+	for icon in _icons:
+		icon.rotation.y += delta * 1.2
+		icon.position.y += sin(Time.get_ticks_msec() * 0.003) * delta * 0.3
 	for c in _clouds:
 		c.position.x += delta * 0.6
 		if c.position.x > 60:
@@ -125,13 +193,13 @@ func _build_environment() -> void:
 
 
 func _build_ground() -> void:
-	U.block(self, Vector3(HALF_SIZE * 2 + 4, 1, HALF_SIZE * 2 + 4), Vector3(0, -0.5, 0), GRASS)
+	U.block(_park, Vector3(HALF_SIZE * 2 + 4, 1, HALF_SIZE * 2 + 4), Vector3(0, -0.5, 0), GRASS)
 	# Sand patches under the play areas (looks only, no collision).
-	U.mesh_box(self, Vector3(16, 0.02, 14), Vector3(-10, 0.01, -2), SAND)
-	U.mesh_box(self, Vector3(14, 0.02, 22), Vector3(11, 0.01, -1), SAND)
-	U.mesh_box(self, Vector3(10, 0.02, 7), Vector3(0, 0.01, -12), SAND)
+	U.mesh_box(_park, Vector3(16, 0.02, 14), Vector3(-10, 0.01, -2), SAND)
+	U.mesh_box(_park, Vector3(14, 0.02, 22), Vector3(11, 0.01, -1), SAND)
+	U.mesh_box(_park, Vector3(10, 0.02, 7), Vector3(0, 0.01, -12), SAND)
 	# A bright start circle.
-	U.mesh_cylinder(self, 1.5, 0.03, Vector3(SPAWN.x, 0.015, SPAWN.z), Color(1, 1, 1, 0.6))
+	U.mesh_cylinder(_park, 1.5, 0.03, Vector3(SPAWN.x, 0.015, SPAWN.z), Color(1, 1, 1, 0.6))
 
 
 func _build_fence() -> void:
@@ -139,25 +207,25 @@ func _build_fence() -> void:
 	for side: float in [-1.0, 1.0]:
 		# Tall invisible walls so nobody leaves the park, even from the big trampoline.
 		var wall_x := StaticBody3D.new()
-		add_child(wall_x)
+		_park.add_child(wall_x)
 		U.add_box_shape(wall_x, Vector3(1, 60, h * 2 + 2), Vector3(h * side, 30, 0))
 		var wall_z := StaticBody3D.new()
-		add_child(wall_z)
+		_park.add_child(wall_z)
 		U.add_box_shape(wall_z, Vector3(h * 2 + 2, 60, 1), Vector3(0, 30, h * side))
 		# The fence you can see.
 		for y: float in [0.45, 0.95]:
-			U.mesh_box(self, Vector3(0.15, 0.15, h * 2), Vector3(h * side, y, 0), WHITE)
-			U.mesh_box(self, Vector3(h * 2, 0.15, 0.15), Vector3(0, y, h * side), WHITE)
+			U.mesh_box(_park, Vector3(0.15, 0.15, h * 2), Vector3(h * side, y, 0), WHITE)
+			U.mesh_box(_park, Vector3(h * 2, 0.15, 0.15), Vector3(0, y, h * side), WHITE)
 		var post := -h
 		while post <= h:
-			U.mesh_box(self, Vector3(0.25, 1.3, 0.25), Vector3(h * side, 0.65, post), WHITE)
-			U.mesh_box(self, Vector3(0.25, 1.3, 0.25), Vector3(post, 0.65, h * side), WHITE)
+			U.mesh_box(_park, Vector3(0.25, 1.3, 0.25), Vector3(h * side, 0.65, post), WHITE)
+			U.mesh_box(_park, Vector3(0.25, 1.3, 0.25), Vector3(post, 0.65, h * side), WHITE)
 			post += 3.0
 
 
 func _build_trampoline(pos: Vector3, radius: float, power: float, color: Color) -> void:
-	U.solid_cylinder(self, radius, 0.6, pos + Vector3(0, 0.3, 0), color)
-	var pad := U.solid_cylinder(self, radius - 0.3, 0.1, pos + Vector3(0, 0.62, 0), Color(0.15, 0.15, 0.2))
+	U.solid_cylinder(_park, radius, 0.6, pos + Vector3(0, 0.3, 0), color)
+	var pad := U.solid_cylinder(_park, radius - 0.3, 0.1, pos + Vector3(0, 0.62, 0), Color(0.15, 0.15, 0.2))
 	pad.set_meta("bounce", power)
 
 
@@ -173,7 +241,7 @@ func _build_trampolines() -> void:
 func _build_slide(origin: Vector3, height: float, color: Color) -> void:
 	var root := Node3D.new()
 	root.position = origin
-	add_child(root)
+	_park.add_child(root)
 	var half := 1.2
 	var width := 2.0
 
@@ -209,8 +277,8 @@ func _build_swings(origin: Vector3) -> void:
 	var bar_h := 3.4
 	for x: float in [-3.0, 3.0]:
 		for z: float in [-0.8, 0.8]:
-			U.block(self, Vector3(0.25, bar_h, 0.25), origin + Vector3(x, bar_h * 0.5, z), RAINBOW[0])
-	U.block(self, Vector3(6.4, 0.25, 0.25), origin + Vector3(0, bar_h, 0), RAINBOW[0])
+			U.block(_park, Vector3(0.25, bar_h, 0.25), origin + Vector3(x, bar_h * 0.5, z), RAINBOW[0])
+	U.block(_park, Vector3(6.4, 0.25, 0.25), origin + Vector3(0, bar_h, 0), RAINBOW[0])
 	var colors := [RAINBOW[2], RAINBOW[4]]
 	for i in 2:
 		var seat := Rides.SwingSeat.new()
@@ -222,14 +290,14 @@ func _build_swings(origin: Vector3) -> void:
 		U.add_box_shape(seat, Vector3(1.3, 0.15, 0.7))
 		for side: float in [-1.0, 1.0]:
 			U.mesh_box(seat, Vector3(0.06, seat.rope_length, 0.06), Vector3(0.6 * side, seat.rope_length * 0.5, 0), Color(0.3, 0.3, 0.3))
-		add_child(seat)
+		_park.add_child(seat)
 
 
 func _build_merry_go_round(pos: Vector3) -> void:
-	U.solid_cylinder(self, 0.6, 0.3, pos + Vector3(0, 0.15, 0), Color(0.4, 0.4, 0.45))
+	U.solid_cylinder(_park, 0.6, 0.3, pos + Vector3(0, 0.15, 0), Color(0.4, 0.4, 0.45))
 	var spinner := Rides.Spinner.new()
 	spinner.position = pos + Vector3(0, 0.45, 0)
-	add_child(spinner)
+	_park.add_child(spinner)
 	var radius := 3.2
 	U.mesh_cylinder(spinner, radius, 0.3, Vector3.ZERO, WHITE)
 	var shape := CylinderShape3D.new()
@@ -260,20 +328,20 @@ func _build_block_tower(center: Vector3) -> void:
 	var steps := 9
 	var step_h := 0.7
 	var top_h := step_h * steps
-	U.block(self, Vector3(2.6, top_h, 2.6), center + Vector3(0, top_h * 0.5, 0), WHITE)
+	U.block(_park, Vector3(2.6, top_h, 2.6), center + Vector3(0, top_h * 0.5, 0), WHITE)
 	for i in steps:
 		var h := step_h * (i + 1)
 		var a := TAU * i / 8.5
 		var p := center + Vector3(cos(a) * 2.5, h * 0.5, sin(a) * 2.5)
-		var b := U.block(self, Vector3(1.4, h, 1.4), p, RAINBOW[i % RAINBOW.size()])
+		var b := U.block(_park, Vector3(1.4, h, 1.4), p, RAINBOW[i % RAINBOW.size()])
 		b.rotation.y = -a
-	U.mesh_box(self, Vector3(0.1, 2.0, 0.1), center + Vector3(0, top_h + 1.0, 0), Color(0.3, 0.3, 0.3))
-	U.mesh_box(self, Vector3(0.9, 0.55, 0.05), center + Vector3(0.45, top_h + 1.7, 0), RAINBOW[0])
+	U.mesh_box(_park, Vector3(0.1, 2.0, 0.1), center + Vector3(0, top_h + 1.0, 0), Color(0.3, 0.3, 0.3))
+	U.mesh_box(_park, Vector3(0.9, 0.55, 0.05), center + Vector3(0.45, top_h + 1.7, 0), RAINBOW[0])
 	# Reaching the top plays a fanfare.
 	var goal := Area3D.new()
 	goal.position = center + Vector3(0, top_h + 0.8, 0)
 	U.add_box_shape(goal, Vector3(2.6, 1.6, 2.6))
-	add_child(goal)
+	_park.add_child(goal)
 	goal.body_entered.connect(func(body: Node3D):
 		if body is CharacterBody3D:
 			_sound.play("fanfare"))
@@ -305,7 +373,7 @@ func _build_balls(center: Vector3) -> void:
 		mi.mesh = mesh
 		mi.material_override = U.mat(RAINBOW[i])
 		ball.add_child(mi)
-		add_child(ball)
+		_park.add_child(ball)
 
 
 func _build_trees() -> void:
@@ -318,10 +386,10 @@ func _build_trees() -> void:
 		if absf(p.x) < 25 and absf(p.z) < 26:
 			continue
 		var trunk_h := rng.randf_range(1.6, 2.6)
-		U.block(self, Vector3(0.6, trunk_h, 0.6), p + Vector3(0, trunk_h * 0.5, 0), WOOD)
+		U.block(_park, Vector3(0.6, trunk_h, 0.6), p + Vector3(0, trunk_h * 0.5, 0), WOOD)
 		var green := Color(0.2, rng.randf_range(0.5, 0.7), 0.25)
-		U.mesh_box(self, Vector3(2.6, 1.6, 2.6), p + Vector3(0, trunk_h + 0.7, 0), green)
-		U.mesh_box(self, Vector3(1.7, 1.1, 1.7), p + Vector3(0, trunk_h + 1.9, 0), green.lightened(0.15))
+		U.mesh_box(_park, Vector3(2.6, 1.6, 2.6), p + Vector3(0, trunk_h + 0.7, 0), green)
+		U.mesh_box(_park, Vector3(1.7, 1.1, 1.7), p + Vector3(0, trunk_h + 1.9, 0), green.lightened(0.15))
 		placed += 1
 
 
@@ -331,7 +399,7 @@ func _build_clouds() -> void:
 	for i in 7:
 		var cloud := Node3D.new()
 		cloud.position = Vector3(rng.randf_range(-60, 60), rng.randf_range(22, 30), rng.randf_range(-50, 30))
-		add_child(cloud)
+		_park.add_child(cloud)
 		for j in 3:
 			U.mesh_box(cloud, Vector3(rng.randf_range(4, 7), 1.6, rng.randf_range(3, 4)), Vector3(j * 2.5 - 2.5, rng.randf_range(0, 0.8), 0), WHITE)
 		_clouds.append(cloud)

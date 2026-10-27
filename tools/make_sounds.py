@@ -155,6 +155,15 @@ def sfx_checkpoint() -> np.ndarray:
     return fade_out(out + sparkle)
 
 
+def sfx_lava() -> np.ndarray:
+    """A sizzle and a funny "oops" going down."""
+    d = 0.8
+    t = times(d)
+    sizzle = np.diff(noise(d, 21), prepend=0) * env(d, 0.005, 5) * 0.6
+    oops = tri(phase(700 * np.exp(-1.8 * t), d)) * env(d, 0.01, 3.5)
+    return fade_out(sizzle + oops, 0.1)
+
+
 def sfx_fanfare() -> np.ndarray:
     notes = [(72, 0.12), (76, 0.12), (79, 0.12), (84, 0.7)]  # C5 E5 G5 C6
     total = sum(d for _, d in notes) + 0.3
@@ -251,7 +260,7 @@ def music() -> np.ndarray:
 def main() -> None:
     for name, fn in {
         "jump": sfx_jump, "boing": sfx_boing, "land": sfx_land, "step": sfx_step,
-        "slide": sfx_slide, "kick": sfx_kick, "sit": sfx_sit, "home": sfx_home, "fanfare": sfx_fanfare, "checkpoint": sfx_checkpoint,
+        "slide": sfx_slide, "kick": sfx_kick, "sit": sfx_sit, "home": sfx_home, "fanfare": sfx_fanfare, "checkpoint": sfx_checkpoint, "lava": sfx_lava,
     }.items():
         save(ROOT / "sfx" / f"{name}.wav", fn())
     save(ROOT / "music" / "park.wav", music(), peak=0.7)

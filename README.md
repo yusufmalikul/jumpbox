@@ -4,9 +4,20 @@ An offline 3D playground game for little kids, made with Godot 4.7. One big park
 trampolines, slides, swings, a merry-go-round, a block tower and bouncy balls. There is
 no way to lose: just play.
 
-Walk through the rainbow portal to reach the **sky course**: easy jumps high above the
-clouds, up through 10 numbered checkpoints to a golden trophy. Gaps are short and steps
-are low, made for small kids. Fall into the clouds and you come back at your last checkpoint.
+Two rainbow doors in the park lead to jump courses, each with 10 numbered checkpoints
+and a golden trophy at the end. Platforms are wide and gaps are short, made for small kids.
+
+- ☁️ **Sky course** (cloud over the door): easy jumps high above the clouds. Fall into the
+  clouds and you come back at your last checkpoint.
+- 🔥 **Lava course** (flame over the door): hop across stones over a sea of lava, up to the
+  top of a volcano. Touch the lava and you come back at your last checkpoint.
+
+| Lava course | The park doors |
+|---|---|
+| ![Lava course](docs/lava-course.jpg) | ![Rainbow doors in the park](docs/park-doors.jpg) |
+
+Only one place is shown at a time (the park or the course you are in), and each course is
+built the first time you enter it. This keeps the game light on older phones.
 
 [![JumpBox demo video](docs/demo.jpg)](docs/demo.mp4)
 
@@ -63,5 +74,6 @@ godot --path . -- --shot=/tmp/shot.png          # save a screenshot after 2 seco
 ## Code
 
 The whole park is built from code in `scripts/main.gd`. `player.gd` is the character and
-camera, `obby.gd` the sky course, `touch_ui.gd` the on-screen controls, `rides.gd` the moving parts (swings,
+camera, `course.gd` the shared course logic (checkpoints, platforms) with `sky_course.gd`
+and `lava_course.gd` laying out each course, `touch_ui.gd` the on-screen controls, `rides.gd` the moving parts (swings,
 merry-go-round), and `util.gd` small helpers for making blocks.
