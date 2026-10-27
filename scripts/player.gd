@@ -45,6 +45,12 @@ var _floor_obj: Object
 ## The swing seat we sit on, if any.
 var _seat: Node3D
 var _seat_cooldown := 0.0
+## The swim ring we sit in, if any (water park).
+var _float: Node3D
+var _float_cooldown := 0.0
+## True until the jump button is let go after getting into a ring, so holding jump
+## does not throw you right back out.
+var _float_wait_release := false
 var _was_on_slide := false
 var _kick_cooldown := 0.0
 
@@ -96,6 +102,7 @@ func respawn(sound_name := "home") -> void:
 
 ## Throws the player straight up, like a water jet does.
 func launch(up_speed: float) -> void:
+	_leave_float()
 	velocity.y = up_speed
 	_air_time = COYOTE_TIME
 	_squash = 1.0
@@ -110,6 +117,7 @@ func teleport(pos: Vector3) -> void:
 	global_position = pos
 	velocity = Vector3.ZERO
 	_seat = null
+	_leave_float()
 	_cam_rig.global_position = pos + Vector3.UP * 1.3
 
 
@@ -185,8 +193,12 @@ func _read_jump() -> bool:
 func _physics_process(delta: float) -> void:
 	_seat_cooldown -= delta
 	_kick_cooldown -= delta
+	_float_cooldown -= delta
 	if _seat:
 		_ride_seat()
+		return
+	if _float:
+		_ride_float()
 		return
 	var input := _read_move()
 	var wish := Vector3(input.x, 0, input.y).rotated(Vector3.UP, _cam_yaw)
@@ -245,6 +257,36 @@ func _ride_seat() -> void:
 		global_position.y += 0.1
 
 
+## Sit in the swim ring. The joystick paddles it around; jump to get out.
+func _ride_float() -> void:
+	var input := _read_move()
+	_float.paddle(Vector3(input.x, 0, input.y).rotated(Vector3.UP, _cam_yaw))
+	# Sit low, so the legs are in the water and the body pokes out of the ring.
+	global_position = _float.global_position + Vector3.DOWN * 0.7
+	velocity = Vector3.ZERO
+	_update_shadow()
+	if not _read_jump():
+		_float_wait_release = false
+	elif not _float_wait_release:
+		var forward := _float.global_basis.z * -1.0
+		_float.push_off(forward)
+		_leave_float()
+		# Start from the front edge, so you land in the water and not back in the ring.
+		global_position += Vector3.UP * 1.1 + forward * 1.0
+		velocity = Vector3.UP * JUMP_SPEED + forward * 4.0
+		_air_time = COYOTE_TIME
+		_sfx("jump", -4.0)
+
+
+func _leave_float() -> void:
+	if _float == null:
+		return
+	if is_instance_valid(_float):
+		_float.ridden = false
+	_float = null
+	_float_cooldown = 0.8
+
+
 ## Handles what we touched. Returns true if we bounced on a trampoline.
 func _after_move() -> bool:
 	var bounced := false
@@ -257,6 +299,11 @@ func _after_move() -> bool:
 		if n.y > 0.6 and obj.has_meta("seat") and _seat_cooldown <= 0.0:
 			_seat = obj
 			_sfx("sit")
+		if n.y > 0.6 and obj.has_meta("float") and _float_cooldown <= 0.0 and _float == null:
+			_float = obj
+			_float.ridden = true
+			_float_wait_release = _read_jump()
+			_sfx("splash", -8.0)
 		if n.y > 0.6:
 			if obj.has_meta("bounce"):
 				var power: float = obj.get_meta("bounce")
@@ -318,6 +365,12 @@ func _update_model(delta: float) -> void:
 		for i in 2:
 			_legs[i].rotation.x = lerpf(_legs[i].rotation.x, leg_swing, 0.3)
 			_arms[i].rotation.x = lerpf(_arms[i].rotation.x, arm_angle, 0.3)
+		return
+	if _float:
+		_model.rotation.y = _float.global_rotation.y
+		for i in 2:
+			_legs[i].rotation.x = lerpf(_legs[i].rotation.x, -1.3, 0.3)  # legs forward, in the water
+			_arms[i].rotation.x = lerpf(_arms[i].rotation.x, -0.9, 0.3)  # arms on the ring
 		return
 	if on_slide or not is_on_floor():
 		arm_angle = -2.6  # arms up: wheee!

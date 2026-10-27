@@ -29,8 +29,10 @@ Platforms are wide and gaps are short, made for small kids.
 
 - 💧 **Water park** (water drop over the door, behind the start): a big pool, waist deep,
   so nobody can sink. Climb the tower and ride one of two curvy water slides down into
-  the pool with a big splash. Step on a water jet and it throws you up, or hop across
-  the floating swim rings. Walking in the water is a little slower, like real water.
+  the pool with a big splash. Step on a water jet and it throws you up. Jump onto a
+  swim ring or a yellow duck float to sit inside it and paddle around with the joystick
+  (the duck turns to look where you go); press jump to get out. Walking in the water is
+  a little slower, like real water.
 
 | Water park | On the water slide |
 |---|---|
@@ -66,6 +68,8 @@ Play Store; choose "Install anyway". All versions are on the
 - Drag on the right side: turn the camera
 - Home button (top left): go back to the start
 - Land on a swing seat to sit and swing; press jump to get off
+- In the water park: jump onto a swim ring or duck float to sit in it, move with the
+  joystick, press jump to get out
 - On the sky course: the big number at the top is your checkpoint; the arrows next to it
   jump to the previous or next checkpoint if a stage is too hard
 

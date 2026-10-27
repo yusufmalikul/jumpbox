@@ -1,6 +1,7 @@
 extends "res://scripts/place.gd"
 ## A water park: a big shallow pool, a tower with two curvy water slides that end with a
-## splash, water jets that throw you up, and floating rings to hop across.
+## splash, water jets that throw you up, and floating rings and duck floats. Jump onto
+## one to sit inside and paddle around; jump again to get out.
 ## The water is waist deep, so nobody can sink. Walking in water is a little slower.
 
 const Rides := preload("res://scripts/rides.gd")
@@ -15,10 +16,13 @@ const WATER_Y := -0.25
 const TOWER := Vector3(0, 10, -45)
 const DECK := Color(0.9, 0.78, 0.6)
 const WATER := Color(0.3, 0.7, 1.0, 0.55)
+const DUCK := Color(1.0, 0.85, 0.15)
 
 var spawn := Vector3(0, 0.1, 16)
 ## Where each water slide starts and ends (for tests).
 var slide_paths: Array = []
+## The swim rings and duck floats (for tests).
+var floaters: Array[Node3D] = []
 
 
 func _ready() -> void:
@@ -31,6 +35,8 @@ func _ready() -> void:
 		_build_jet(p)
 	for i in 5:
 		_build_ring(Vector3(-10 + i * 5, 0, 1 + (i % 2) * 2), COLORS[i])
+	for p in [Vector3(-4, 0, -12), Vector3(5, 0, -6), Vector3(-9, 0, -4)]:
+		_build_duck(p)
 	_build_decor()
 	_home_door(Vector3(0, 0, 24), Basis.looking_at(Vector3.FORWARD, Vector3.UP))
 	_edge_walls(HALF)
@@ -183,10 +189,11 @@ func _build_jet(pos: Vector3) -> void:
 			sound.play("splash"), CONNECT_DEFERRED)
 
 
-## A swim ring that bobs on the water. You can stand on it.
-func _build_ring(pos: Vector3, color: Color) -> void:
+## A swim ring that bobs on the water. Jump onto it to sit inside.
+func _build_ring(pos: Vector3, color: Color, stripes := true) -> Node3D:
 	var ring := Rides.Floater.new()
 	ring.base = Vector3(pos.x, WATER_Y - 0.05, pos.z)
+	ring.bounds = Rect2(-POOL_X, POOL_Z0, POOL_X * 2, POOL_Z1 - POOL_Z0)
 	var torus := TorusMesh.new()
 	torus.inner_radius = 0.55
 	torus.outer_radius = 1.1
@@ -198,6 +205,8 @@ func _build_ring(pos: Vector3, color: Color) -> void:
 	ring.add_child(mi)
 	# White stripes on the ring.
 	for k in 4:
+		if not stripes:
+			break
 		var a := TAU * k / 4.0
 		var stripe := U.mesh_box(ring, Vector3(0.18, 0.3, 0.6), Vector3(cos(a) * 0.82, 0, sin(a) * 0.82), Color.WHITE)
 		stripe.rotation.y = -a
@@ -208,6 +217,21 @@ func _build_ring(pos: Vector3, color: Color) -> void:
 	cs.shape = shape
 	ring.add_child(cs)
 	add_child(ring)
+	floaters.append(ring)
+	return ring
+
+
+## A yellow duck float: a ring with a duck head at the front (-Z) and a tail at the back.
+## It turns to look where you paddle.
+func _build_duck(pos: Vector3) -> void:
+	var duck := _build_ring(pos, DUCK, false)
+	U.mesh_box(duck, Vector3(0.32, 0.6, 0.32), Vector3(0, 0.4, -0.85), DUCK)  # neck
+	var head := U.mesh_box(duck, Vector3(0.55, 0.5, 0.6), Vector3(0, 0.85, -0.95), DUCK)
+	U.mesh_box(head, Vector3(0.3, 0.12, 0.3), Vector3(0, -0.05, -0.4), Color(1.0, 0.5, 0.1))  # beak
+	for side: float in [-1.0, 1.0]:
+		U.mesh_box(head, Vector3(0.02, 0.1, 0.1), Vector3(0.28 * side, 0.08, -0.1), Color.BLACK)  # eyes
+	var tail := U.mesh_box(duck, Vector3(0.4, 0.35, 0.3), Vector3(0, 0.3, 0.95), DUCK)
+	tail.rotation.x = -0.5
 
 
 func _build_decor() -> void:
