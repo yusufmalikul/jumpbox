@@ -10,7 +10,7 @@ game remembers your hat for next time.
 
 ![The five hats: crown, snowman, teddy bear, bunny ears and flower hat](docs/hats.jpg)
 
-Three rainbow doors in the park lead to bigger adventures. The two jump courses (an
+Four rainbow doors in the park lead to bigger adventures. The two jump courses (an
 "obby" in Roblox words) each have 10 numbered checkpoints and a golden trophy at the end.
 Platforms are wide and gaps are short, made for small kids.
 
@@ -27,12 +27,21 @@ Platforms are wide and gaps are short, made for small kids.
 |---|---|
 | ![A 40 m rainbow tower with a spiral slide around it](docs/slide-tower.jpg) | ![Sliding down the spiral](docs/slide-ride.jpg) |
 
+- 💧 **Water park** (water drop over the door, behind the start): a big pool, waist deep,
+  so nobody can sink. Climb the tower and ride one of two curvy water slides down into
+  the pool with a big splash. Step on a water jet and it throws you up, or hop across
+  the floating swim rings. Walking in the water is a little slower, like real water.
+
+| Water park | On the water slide |
+|---|---|
+| ![The water park: pool, swim rings, water jets and two curvy slides](docs/water-park.jpg) | ![Riding the orange water slide](docs/water-slide.jpg) |
+
 | The park | Lava course |
 |---|---|
 | ![The park: rides in the middle, hat stands at the start, and a rainbow door on each side](docs/park.jpg) | ![Lava course](docs/lava-course.jpg) |
 
-The doors stand away from the rides: lava on the left, sky on the right and the spiral
-slide behind the start, each with a sand path leading to it.
+The doors stand away from the rides: lava on the left, sky on the right, and the spiral
+slide and water park behind the start, each with a sand path leading to it.
 
 Only one place is shown at a time (the park or the course you are in), and each course is
 built the first time you enter it. This keeps the game light on older phones.
@@ -98,6 +107,6 @@ godot --headless --path . -s tests/touch_test.gd   # touch buttons only react in
 ## Code
 
 The whole park is built from code in `scripts/main.gd`. `player.gd` is the character and
-camera, `course.gd` the shared course logic (checkpoints, platforms) with `sky_course.gd`
-and `lava_course.gd` laying out each course, `slide_course.gd` the spiral slide, `hats.gd` the hats, `touch_ui.gd` the on-screen controls, `rides.gd` the moving parts (swings,
+camera, `place.gd` what every place behind a door shares, `course.gd` the shared course logic (checkpoints, platforms) with `sky_course.gd`
+and `lava_course.gd` laying out each course, `slide_course.gd` the spiral slide, `water_course.gd` the water park, `hats.gd` the hats, `touch_ui.gd` the on-screen controls, `rides.gd` the moving parts (swings,
 merry-go-round), and `util.gd` small helpers for making blocks.

@@ -1,26 +1,12 @@
-extends Node3D
+extends "res://scripts/place.gd"
 ## A giant spiral slide that winds around a tall tower, from the top all the way down.
 ## You arrive at the top. At the bottom, one door takes you up again and one takes you home.
-## It has the same enter/leave/skip API as course.gd, so main.gd treats it like a course.
-
-const U := preload("res://scripts/util.gd")
 
 const HEIGHT := 40.0
 const TURNS := 5.0
 const RADIUS := 7.0
 const WIDTH := 2.6
 const SEGMENTS_PER_TURN := 32
-const COLORS: Array[Color] = [
-	Color(0.95, 0.3, 0.3), Color(1.0, 0.6, 0.15), Color(1.0, 0.85, 0.2), Color(0.4, 0.8, 0.3),
-	Color(0.25, 0.65, 0.95), Color(0.55, 0.4, 0.9), Color(0.95, 0.45, 0.75),
-]
-
-signal go_home
-
-var player: Node
-var sound: Node
-var ui: Node
-var active := false
 
 ## Where you start at the top, and where the slide ends at the bottom.
 var top_spot := Vector3.ZERO
@@ -34,25 +20,10 @@ func _ready() -> void:
 	_build_bottom()
 
 
-func enter() -> void:
-	active = true
-	visible = true
-	process_mode = Node.PROCESS_MODE_INHERIT
+func _arrive() -> void:
 	player.kill_y = global_position.y - 10.0
 	player.fall_sound = "home"
 	_go_up()
-	ui.show_stage = false
-	ui.queue_redraw()
-
-
-func leave() -> void:
-	active = false
-	visible = false
-	process_mode = Node.PROCESS_MODE_DISABLED
-
-
-func skip(_step: int) -> void:
-	pass
 
 
 func _go_up() -> void:
@@ -80,12 +51,7 @@ func _build_ground() -> void:
 		var trunk_h := rng.randf_range(1.6, 2.6)
 		U.block(self, Vector3(0.6, trunk_h, 0.6), p + Vector3(0, trunk_h * 0.5, 0), Color(0.6, 0.4, 0.22))
 		U.mesh_box(self, Vector3(2.6, 1.6, 2.6), p + Vector3(0, trunk_h + 0.7, 0), Color(0.2, rng.randf_range(0.5, 0.7), 0.25))
-	# Tall invisible walls around the edge.
-	for side: float in [-1.0, 1.0]:
-		var wall := StaticBody3D.new()
-		add_child(wall)
-		U.add_box_shape(wall, Vector3(1, 80, 90), Vector3(44 * side, 40, 0))
-		U.add_box_shape(wall, Vector3(90, 80, 1), Vector3(0, 40, 44 * side))
+	_edge_walls(44)
 
 
 func _build_tower() -> void:
@@ -175,15 +141,4 @@ func _build_bottom() -> void:
 		var wing := U.mesh_box(arrow, Vector3(0.3, 0.75, 0.3), Vector3(0.22 * s, 0.25, 0), COLORS[3])
 		wing.rotation.z = 0.8 * s
 
-	# Go home.
-	var home_pos := local + away * 4.0 - side * 2.5
-	var home_door := U.portal(self, home_pos, facing, COLORS)
-	home_door.body_entered.connect(func(body: Node3D):
-		if body == player:
-			go_home.emit(), CONNECT_DEFERRED)
-	var house := Node3D.new()
-	house.position = home_pos + Vector3.UP * 4.2
-	add_child(house)
-	U.mesh_box(house, Vector3(0.8, 0.6, 0.4), Vector3.ZERO, Color.WHITE)
-	var roof := U.mesh_box(house, Vector3(0.7, 0.7, 0.42), Vector3(0, 0.4, 0), COLORS[0])
-	roof.rotation.z = PI * 0.25
+	_home_door(local + away * 4.0 - side * 2.5, facing)

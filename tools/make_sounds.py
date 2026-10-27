@@ -164,6 +164,24 @@ def sfx_lava() -> np.ndarray:
     return fade_out(sizzle + oops, 0.1)
 
 
+def sfx_splash() -> np.ndarray:
+    """A splash of water with a few bubbly blips after it."""
+    d = 0.9
+    t = times(d)
+    wash = lowpass(noise(d, 31), 0.6) * env(d, 0.004, 6) * 2.5
+    out = wash.copy()
+    rng = np.random.default_rng(4)
+    for k in range(5):
+        start = 0.08 + k * 0.1 + rng.uniform(0, 0.04)
+        bd = 0.07
+        f0 = rng.uniform(500, 900)
+        bt = times(bd)
+        blip = np.sin(phase(f0 + 900 * bt / bd, bd)) * env(bd, 0.003, 30) * 0.5
+        i = int(start * SR)
+        out[i:i + len(blip)] += blip
+    return fade_out(out, 0.1)
+
+
 def sfx_fanfare() -> np.ndarray:
     notes = [(72, 0.12), (76, 0.12), (79, 0.12), (84, 0.7)]  # C5 E5 G5 C6
     total = sum(d for _, d in notes) + 0.3
@@ -260,7 +278,7 @@ def music() -> np.ndarray:
 def main() -> None:
     for name, fn in {
         "jump": sfx_jump, "boing": sfx_boing, "land": sfx_land, "step": sfx_step,
-        "slide": sfx_slide, "kick": sfx_kick, "sit": sfx_sit, "home": sfx_home, "fanfare": sfx_fanfare, "checkpoint": sfx_checkpoint, "lava": sfx_lava,
+        "slide": sfx_slide, "kick": sfx_kick, "sit": sfx_sit, "home": sfx_home, "fanfare": sfx_fanfare, "checkpoint": sfx_checkpoint, "lava": sfx_lava, "splash": sfx_splash,
     }.items():
         save(ROOT / "sfx" / f"{name}.wav", fn())
     save(ROOT / "music" / "park.wav", music(), peak=0.7)

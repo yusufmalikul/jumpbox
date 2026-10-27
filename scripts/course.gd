@@ -1,10 +1,8 @@
-extends Node3D
+extends "res://scripts/place.gd"
 ## Base for the jump courses: 10 numbered checkpoints from a start pad to a trophy.
-## A course is built the first time you enter it, and hidden (and taken out of physics)
-## while you are somewhere else. Fall too low and you come back at the last checkpoint.
+## Fall too low and you come back at the last checkpoint.
 ## Subclasses lay out the platforms in _layout() and make the floor in _build_floor().
 
-const U := preload("res://scripts/util.gd")
 const Rides := preload("res://scripts/rides.gd")
 
 const CHECKPOINTS := 10
@@ -12,16 +10,6 @@ const CHECKPOINTS := 10
 const W := 5.0
 const D := 4.0
 const GAP := 0.8
-const COLORS: Array[Color] = [
-	Color(0.95, 0.3, 0.3), Color(1.0, 0.6, 0.15), Color(1.0, 0.85, 0.2), Color(0.4, 0.8, 0.3),
-	Color(0.25, 0.65, 0.95), Color(0.55, 0.4, 0.9), Color(0.95, 0.45, 0.75),
-]
-
-signal go_home
-
-var player: Node
-var sound: Node
-var ui: Node
 
 ## Where you stand at each checkpoint. Index 0 is the start pad.
 var spots: Array[Vector3] = []
@@ -29,7 +17,6 @@ var spots: Array[Vector3] = []
 var path: Array = []
 ## The checkpoint you come back to.
 var current := 0
-var active := false
 
 ## Falling this far below the start pad sends you back.
 var kill_depth := 8.0
@@ -62,23 +49,12 @@ func _build_floor() -> void:
 
 
 ## Sends the player to the course, at the last checkpoint they reached.
-func enter() -> void:
-	active = true
-	visible = true
-	process_mode = Node.PROCESS_MODE_INHERIT
+func _arrive() -> void:
 	player.kill_y = global_position.y - kill_depth
 	player.fall_sound = fall_sound
 	_go_to(current)
 	ui.show_stage = true
 	ui.stage = current
-	ui.queue_redraw()
-
-
-func leave() -> void:
-	active = false
-	visible = false
-	process_mode = Node.PROCESS_MODE_DISABLED
-	ui.show_stage = false
 	ui.queue_redraw()
 
 
@@ -241,12 +217,8 @@ func _build_trophy() -> void:
 	for s: float in [-1.0, 1.0]:
 		U.mesh_box(self, Vector3(0.2, 0.7, 0.2), base + Vector3.UP * 2.2 + _right() * 0.8 * s, gold)
 
-	# A rainbow portal next to the trophy takes you home.
-	var spot := _p - _right() * 2.2
-	var portal := U.portal(self, spot, Basis.looking_at(_right(), Vector3.UP), COLORS)
-	portal.body_entered.connect(func(body: Node3D):
-		if body == player:
-			go_home.emit(), CONNECT_DEFERRED)
+	# A rainbow door next to the trophy takes you home.
+	_home_door(_p - _right() * 2.2, Basis.looking_at(_right(), Vector3.UP))
 
 
 ## The area the course covers (from the checkpoints), plus a margin. Used to size floors.

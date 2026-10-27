@@ -50,3 +50,22 @@ class Mover extends AnimatableBody3D:
 	func _physics_process(delta: float) -> void:
 		_t += delta
 		position = start + offset * (0.5 - 0.5 * cos(TAU * _t / period))
+
+
+## A swim ring floating on water: it bobs up and down and turns slowly.
+class Floater extends AnimatableBody3D:
+	var base := Vector3.ZERO
+	var _t := randf() * TAU
+
+	func _ready() -> void:
+		sync_to_physics = true
+		_place()
+
+	func _physics_process(delta: float) -> void:
+		_t += delta
+		_place()
+
+	# Set position and turn together. With sync_to_physics, setting them one by one
+	# makes the second write undo the first.
+	func _place() -> void:
+		transform = Transform3D(Basis(Vector3.UP, _t * 0.3), base + Vector3.UP * sin(_t * 1.8) * 0.06)

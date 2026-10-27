@@ -146,3 +146,15 @@ static func confetti(parent: Node, pos: Vector3, amount: int, colors: Array[Colo
 	c.global_position = pos + Vector3.UP * 0.5
 	c.emitting = true
 	c.get_tree().create_timer(3.0).timeout.connect(c.queue_free)
+
+
+## A slide made of short straight pieces through `points` (top first), with a wall on each
+## side. Pieces overlap a little, so there are no gaps where the slide curves.
+static func slide_path(parent: Node, points: Array[Vector3], width: float, color: Color, wall_height := 1.0) -> void:
+	for i in points.size() - 1:
+		var dir := (points[i + 1] - points[i]).normalized()
+		var from := points[i] - dir * 0.25
+		var to := points[i + 1] + dir * 0.25
+		var piece := ramp(parent, from, to, width, color)
+		piece.set_meta("slide", true)
+		ramp_walls(parent, from, to, width, color.lightened(0.35), wall_height)

@@ -26,6 +26,8 @@ var sound: Node
 var respawn_point := Vector3.ZERO
 ## Falling below this height sends you back to respawn_point.
 var kill_y := -10.0
+## Walking speed is multiplied by this (the water park makes it slower in the pool).
+var move_scale := 1.0
 ## The sound for falling below kill_y.
 var fall_sound := "home"
 
@@ -90,6 +92,13 @@ func set_hat(hat_name: String, save := true) -> void:
 func respawn(sound_name := "home") -> void:
 	teleport(respawn_point)
 	_sfx(sound_name)
+
+
+## Throws the player straight up, like a water jet does.
+func launch(up_speed: float) -> void:
+	velocity.y = up_speed
+	_air_time = COYOTE_TIME
+	_squash = 1.0
 
 
 ## Turns the camera to look along `dir` (only its flat part counts).
@@ -201,7 +210,7 @@ func _physics_process(delta: float) -> void:
 		var accel := 40.0 if on_floor else 14.0
 		if on_floor and wish == Vector3.ZERO:
 			accel = 18.0
-		flat = flat.move_toward(wish * WALK_SPEED, accel * delta)
+		flat = flat.move_toward(wish * WALK_SPEED * move_scale, accel * delta)
 		velocity.x = flat.x
 		velocity.z = flat.z
 
