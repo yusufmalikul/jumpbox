@@ -4,6 +4,10 @@ An offline 3D playground game for little kids, made with Godot 4.7. One big park
 trampolines, slides, swings, a merry-go-round, a block tower and bouncy balls. There is
 no way to lose: just play.
 
+[![JumpBox demo video](docs/demo.jpg)](docs/demo.mp4)
+
+▶️ [Watch the demo video](docs/demo.mp4) (55 seconds, played on an Android phone)
+
 ## Controls
 
 - Left side of the screen: joystick (it appears where your finger lands)
