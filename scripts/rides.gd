@@ -1,0 +1,36 @@
+extends RefCounted
+## Moving playground parts: swing seats and the merry-go-round.
+
+
+## A swing seat that swings back and forth by itself under a pivot point.
+class SwingSeat extends AnimatableBody3D:
+	var pivot := Vector3.ZERO
+	var rope_length := 2.6
+	var amplitude := 0.55
+	var phase := 0.0
+	var _t := 0.0
+
+	func _ready() -> void:
+		sync_to_physics = true
+		_place()
+
+	func _physics_process(delta: float) -> void:
+		_t += delta
+		_place()
+
+	func _place() -> void:
+		var omega := sqrt(9.8 / rope_length)
+		var angle := amplitude * sin(_t * omega + phase)
+		var b := Basis(Vector3.RIGHT, angle)
+		global_transform = Transform3D(b, pivot + b * Vector3(0, -rope_length, 0))
+
+
+## A round platform that keeps turning slowly.
+class Spinner extends AnimatableBody3D:
+	var speed := 0.6
+
+	func _ready() -> void:
+		sync_to_physics = true
+
+	func _physics_process(delta: float) -> void:
+		rotate_y(speed * delta)
