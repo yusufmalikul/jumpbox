@@ -113,3 +113,36 @@ static func portal(parent: Node, pos: Vector3, facing: Basis, colors: Array[Colo
 	add_box_shape(area, Vector3(1.6, 2.0, 1.0), Vector3(0, 1.0, 0))
 	root.add_child(area)
 	return area
+
+
+## A one-time burst of colorful paper squares.
+static func confetti(parent: Node, pos: Vector3, amount: int, colors: Array[Color]) -> void:
+	var mesh := BoxMesh.new()
+	mesh.size = Vector3(0.18, 0.18, 0.04)
+	var m := StandardMaterial3D.new()
+	m.vertex_color_use_as_albedo = true
+	m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mesh.material = m
+	var c := CPUParticles3D.new()
+	c.mesh = mesh
+	c.amount = amount
+	c.lifetime = 2.0
+	c.one_shot = true
+	c.explosiveness = 0.95
+	c.direction = Vector3.UP
+	c.spread = 50
+	c.initial_velocity_min = 5
+	c.initial_velocity_max = 9
+	c.gravity = Vector3(0, -7, 0)
+	c.angular_velocity_min = -400
+	c.angular_velocity_max = 400
+	var ramp := Gradient.new()
+	ramp.offsets = PackedFloat32Array([0.0, 0.2, 0.4, 0.6, 0.8, 1.0])
+	ramp.colors = PackedColorArray(colors.slice(0, 6))
+	ramp.interpolation_mode = Gradient.GRADIENT_INTERPOLATE_CONSTANT
+	c.color_initial_ramp = ramp
+	c.top_level = true
+	parent.add_child(c)
+	c.global_position = pos + Vector3.UP * 0.5
+	c.emitting = true
+	c.get_tree().create_timer(3.0).timeout.connect(c.queue_free)

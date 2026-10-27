@@ -9,13 +9,14 @@ const Rides := preload("res://scripts/rides.gd")
 const PlayerScript := preload("res://scripts/player.gd")
 const TouchUIScript := preload("res://scripts/touch_ui.gd")
 const SoundScript := preload("res://scripts/sound.gd")
+const Hats := preload("res://scripts/hats.gd")
 ## The jump courses: their script, where they are, and the icon over their door.
 const COURSES := {
 	"sky": {"script": preload("res://scripts/sky_course.gd"), "pos": Vector3(0, 40, -110), "door": Vector3(4, 0, 3)},
 	"lava": {"script": preload("res://scripts/lava_course.gd"), "pos": Vector3(200, 0, 0), "door": Vector3(-5, 0, 5)},
 }
 
-const SPAWN := Vector3(0, 0.1, 8)
+const SPAWN := Vector3(0, 0.1, 15)
 const HALF_SIZE := 38.0
 
 const GRASS := Color(0.42, 0.78, 0.35)
@@ -59,6 +60,7 @@ func _ready() -> void:
 	_build_clouds()
 	for course_name in COURSES:
 		_build_door(course_name)
+	_build_hat_stands()
 
 	var player := PlayerScript.new()
 	_player = player
@@ -126,6 +128,34 @@ func _go_home() -> void:
 func _set_park_shown(shown: bool) -> void:
 	_park.visible = shown
 	_park.process_mode = Node.PROCESS_MODE_INHERIT if shown else Node.PROCESS_MODE_DISABLED
+
+
+## Five hats on little stands in a half circle in front of the start. Walk up to one to wear it.
+func _build_hat_stands() -> void:
+	for i in Hats.NAMES.size():
+		var hat_name := Hats.NAMES[i]
+		var a := deg_to_rad(-60 + 30 * i)
+		var pos := SPAWN + Vector3(sin(a) * 4.0, -0.1, -cos(a) * 4.0)
+		U.solid_cylinder(_park, 0.55, 0.5, pos + Vector3(0, 0.25, 0), RAINBOW[i])
+		var display := Node3D.new()
+		display.position = pos + Vector3(0, 1.0, 0)
+		display.scale = Vector3.ONE * 2.6
+		_park.add_child(display)
+		Hats.build(hat_name, display)
+		_icons.append(display)
+		var area := Area3D.new()
+		area.position = pos + Vector3(0, 1.0, 0)
+		var shape := SphereShape3D.new()
+		shape.radius = 1.3
+		var cs := CollisionShape3D.new()
+		cs.shape = shape
+		area.add_child(cs)
+		_park.add_child(area)
+		area.body_entered.connect(func(body: Node3D):
+			if body == _player and _player.hat != hat_name:
+				_player.set_hat(hat_name)
+				_sound.play("sit")
+				U.confetti(self, pos + Vector3(0, 1.0, 0), 30, RAINBOW), CONNECT_DEFERRED)
 
 
 func _build_door(course_name: String) -> void:

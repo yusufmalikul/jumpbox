@@ -260,32 +260,4 @@ func _bounds(margin: float) -> AABB:
 
 
 func _confetti(pos: Vector3, amount: int) -> void:
-	var mesh := BoxMesh.new()
-	mesh.size = Vector3(0.18, 0.18, 0.04)
-	var m := StandardMaterial3D.new()
-	m.vertex_color_use_as_albedo = true
-	m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	mesh.material = m
-	var c := CPUParticles3D.new()
-	c.mesh = mesh
-	c.amount = amount
-	c.lifetime = 2.0
-	c.one_shot = true
-	c.explosiveness = 0.95
-	c.direction = Vector3.UP
-	c.spread = 50
-	c.initial_velocity_min = 5
-	c.initial_velocity_max = 9
-	c.gravity = Vector3(0, -7, 0)
-	c.angular_velocity_min = -400
-	c.angular_velocity_max = 400
-	var ramp := Gradient.new()
-	ramp.offsets = PackedFloat32Array([0.0, 0.2, 0.4, 0.6, 0.8, 1.0])
-	ramp.colors = PackedColorArray(COLORS.slice(0, 6))
-	ramp.interpolation_mode = Gradient.GRADIENT_INTERPOLATE_CONSTANT
-	c.color_initial_ramp = ramp
-	c.top_level = true
-	add_child(c)
-	c.global_position = pos + Vector3.UP * 0.5
-	c.emitting = true
-	get_tree().create_timer(3.0).timeout.connect(c.queue_free)
+	U.confetti(self, pos, amount, COLORS)

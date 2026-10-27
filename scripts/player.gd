@@ -3,6 +3,8 @@ extends CharacterBody3D
 ## It also owns the follow camera.
 
 const U := preload("res://scripts/util.gd")
+const Hats := preload("res://scripts/hats.gd")
+const SETTINGS_PATH := "user://settings.cfg"
 
 const WALK_SPEED := 6.0
 const JUMP_SPEED := 8.0
@@ -30,6 +32,9 @@ var fall_sound := "home"
 var _model: Node3D
 var _legs: Array[Node3D] = []
 var _arms: Array[Node3D] = []
+var _hat_root: Node3D
+## The hat being worn ("" for none). Saved, so it stays on next time.
+var hat := ""
 var _walk_time := 0.0
 var _squash := 0.0
 var _air_time := 0.0
@@ -61,6 +66,25 @@ func _ready() -> void:
 	_build_model()
 	_build_camera()
 	_build_shadow()
+	var cfg := ConfigFile.new()
+	if cfg.load(SETTINGS_PATH) == OK:
+		set_hat(cfg.get_value("player", "hat", ""), false)
+
+
+func set_hat(hat_name: String, save := true) -> void:
+	if hat_name == hat:
+		return
+	hat = hat_name
+	for child in _hat_root.get_children():
+		child.queue_free()
+	var holder := Node3D.new()
+	_hat_root.add_child(holder)
+	Hats.build(hat_name, holder)
+	if save:
+		var cfg := ConfigFile.new()
+		cfg.load(SETTINGS_PATH)
+		cfg.set_value("player", "hat", hat_name)
+		cfg.save(SETTINGS_PATH)
 
 
 func respawn(sound_name := "home") -> void:
@@ -100,6 +124,9 @@ func _build_model() -> void:
 	U.mesh_box(head, Vector3(0.08, 0.12, 0.02), Vector3(-0.11, 0.05, -0.255), Color.BLACK)
 	U.mesh_box(head, Vector3(0.08, 0.12, 0.02), Vector3(0.11, 0.05, -0.255), Color.BLACK)
 	U.mesh_box(head, Vector3(0.22, 0.05, 0.02), Vector3(0, -0.11, -0.255), Color(0.5, 0.1, 0.1))
+	_hat_root = Node3D.new()
+	_hat_root.position.y = 0.25  # top of the head
+	head.add_child(_hat_root)
 
 
 func _build_camera() -> void:

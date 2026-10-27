@@ -4,6 +4,10 @@ An offline 3D playground game for little kids, made with Godot 4.7. One big park
 trampolines, slides, swings, a merry-go-round, a block tower and bouncy balls. There is
 no way to lose: just play.
 
+**Pick a hat**: at the start, five hats float on little stands: a crown, a snowman, a
+teddy bear, bunny ears and a flower hat. Walk up to one and you wear it right away. The
+game remembers your hat for next time.
+
 Two rainbow doors in the park lead to jump courses, each with 10 numbered checkpoints
 and a golden trophy at the end. Platforms are wide and gaps are short, made for small kids.
 
@@ -75,5 +79,5 @@ godot --path . -- --shot=/tmp/shot.png          # save a screenshot after 2 seco
 
 The whole park is built from code in `scripts/main.gd`. `player.gd` is the character and
 camera, `course.gd` the shared course logic (checkpoints, platforms) with `sky_course.gd`
-and `lava_course.gd` laying out each course, `touch_ui.gd` the on-screen controls, `rides.gd` the moving parts (swings,
+and `lava_course.gd` laying out each course, `hats.gd` the hats, `touch_ui.gd` the on-screen controls, `rides.gd` the moving parts (swings,
 merry-go-round), and `util.gd` small helpers for making blocks.
