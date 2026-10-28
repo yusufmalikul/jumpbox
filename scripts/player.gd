@@ -1,6 +1,6 @@
 extends CharacterBody3D
-## The blocky kid you play as. Walks, jumps, bounces on trampolines and slides down slides.
-## It also owns the follow camera.
+## The blocky kid you play as. Walks, jumps, bounces on trampolines, slides down slides and
+## climbs climbing walls. It also owns the follow camera.
 
 const U := preload("res://scripts/util.gd")
 const Hats := preload("res://scripts/hats.gd")
@@ -12,6 +12,10 @@ const GRAVITY := 22.0
 const SLIDE_ACCEL := 16.0
 const SLIDE_MAX_SPEED := 13.0
 const COYOTE_TIME := 0.15
+const CLIMB_SPEED := 2.6
+## Bodies on this physics layer (nets) stop the player but not the camera, so the camera
+## can look through them. Everything else is on layer 1.
+const NET_LAYER := 2
 const CAM_DISTANCE := 7.0
 
 const SKIN := Color(1.0, 0.8, 0.25)
@@ -55,6 +59,10 @@ var _float_cooldown := 0.0
 var _wait_release := false
 var _was_on_slide := false
 var _kick_cooldown := 0.0
+## The flat normal of the climbing wall we touch (ZERO when none). Set after each move.
+var _wall_normal := Vector3.ZERO
+var _last_wall_normal := Vector3.ZERO
+var _climbing := false
 
 var _cam_yaw := 0.0
 var _cam_pitch := -0.3
@@ -71,6 +79,7 @@ func _ready() -> void:
 	cs.shape = capsule
 	cs.position.y = 0.85
 	add_child(cs)
+	collision_mask = 1 | NET_LAYER
 	floor_max_angle = deg_to_rad(50)
 	floor_snap_length = 0.3
 	_build_model()
@@ -119,6 +128,8 @@ func teleport(pos: Vector3) -> void:
 	global_position = pos
 	velocity = Vector3.ZERO
 	_seat = null
+	_climbing = false
+	_wall_normal = Vector3.ZERO
 	_model.rotation.x = 0.0
 	_leave_float()
 	_cam_rig.global_position = pos + Vector3.UP * 1.3
@@ -164,6 +175,7 @@ func _build_camera() -> void:
 	arm.spring_length = CAM_DISTANCE
 	arm.margin = 0.3
 	arm.add_excluded_object(get_rid())
+	arm.collision_mask = 1
 	_cam_pitch_node.add_child(arm)
 	var cam := Camera3D.new()
 	cam.fov = 70
@@ -213,6 +225,11 @@ func _physics_process(delta: float) -> void:
 	_was_on_slide = on_slide
 
 	_air_time = 0.0 if on_floor else _air_time + delta
+	if _climb(wish):
+		move_and_slide()
+		_after_move()
+		_update_shadow()
+		return
 	if not on_floor:
 		velocity.y -= GRAVITY * delta
 
@@ -245,6 +262,34 @@ func _physics_process(delta: float) -> void:
 
 	if global_position.y < kill_y:
 		respawn(fall_sound)
+
+
+## Push the joystick toward a climbing wall (or hold jump) to climb up. Let go and you hang
+## on; push away and you drop off. At the top edge you get a little hop onto the floor.
+## Returns true while climbing.
+func _climb(wish: Vector3) -> bool:
+	if _wall_normal == Vector3.ZERO:
+		if _climbing:
+			_climbing = false
+			# We just went past the top edge: hop over it.
+			if velocity.y > 0.0:
+				velocity = Vector3.UP * 4.0 - _last_wall_normal * 3.0
+				_air_time = COYOTE_TIME
+		return false
+	var into := wish.dot(-_wall_normal)
+	var up := into > 0.3 or _read_jump()
+	if into < -0.3 or (is_on_floor() and not up):
+		_climbing = false
+		return false
+	if not _climbing:
+		_sfx("sit", -6.0)
+	_climbing = true
+	_last_wall_normal = _wall_normal
+	var sideways := wish + _wall_normal * into
+	# Lean into the wall a little, so we keep touching it.
+	velocity = Vector3.UP * (CLIMB_SPEED if up else 0.0) + sideways * 2.0 - _wall_normal
+	_air_time = COYOTE_TIME
+	return true
 
 
 ## Walk into a swing seat (or land on it) to sit down. No need to jump right on top.
@@ -324,12 +369,15 @@ func _leave_float() -> void:
 ## Handles what we touched. Returns true if we bounced on a trampoline.
 func _after_move() -> bool:
 	var bounced := false
+	_wall_normal = Vector3.ZERO
 	for i in get_slide_collision_count():
 		var c := get_slide_collision(i)
 		var obj := c.get_collider()
 		if obj == null:
 			continue
 		var n := c.get_normal()
+		if absf(n.y) < 0.5 and obj.has_meta("climb"):
+			_wall_normal = Vector3(n.x, 0, n.z).normalized()
 		if n.y > 0.6 and obj.has_meta("float") and _float_cooldown <= 0.0 and _float == null:
 			_float = obj
 			_float.ridden = true
@@ -403,6 +451,15 @@ func _update_model(delta: float) -> void:
 		for i in 2:
 			_legs[i].rotation.x = lerpf(_legs[i].rotation.x, -1.3, 0.3)  # legs forward, in the water
 			_arms[i].rotation.x = lerpf(_arms[i].rotation.x, -0.9, 0.3)  # arms on the ring
+		return
+	if _climbing:
+		# Face the wall and reach up, one hand after the other.
+		_model.rotation.y = atan2(_last_wall_normal.x, _last_wall_normal.z)
+		_walk_time += delta * absf(velocity.y) * 2.5
+		for i in 2:
+			var s := 1.0 if i == 0 else -1.0
+			_arms[i].rotation.x = lerpf(_arms[i].rotation.x, -2.6 + sin(_walk_time) * 0.5 * s, 0.3)
+			_legs[i].rotation.x = lerpf(_legs[i].rotation.x, -0.4 - sin(_walk_time) * 0.4 * s, 0.3)
 		return
 	if on_slide or not is_on_floor():
 		arm_angle = -2.6  # arms up: wheee!

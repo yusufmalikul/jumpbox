@@ -17,6 +17,7 @@ const COURSES := {
 	"lava": {"script": preload("res://scripts/lava_course.gd"), "pos": Vector3(200, 0, 0), "door": Vector3(-22, 0, 14)},
 	"slide": {"script": preload("res://scripts/slide_course.gd"), "pos": Vector3(-200, 0, 0), "door": Vector3(10, 0, 25)},
 	"water": {"script": preload("res://scripts/water_course.gd"), "pos": Vector3(0, 0, 200), "door": Vector3(-10, 0, 25)},
+	"indoor": {"script": preload("res://scripts/indoor_course.gd"), "pos": Vector3(200, 0, 200), "door": Vector3(0, 0, 30)},
 }
 
 const SPAWN := Vector3(0, 0.1, 15)
@@ -188,6 +189,11 @@ func _build_door(course_name: String) -> void:
 		drop.rotation.z = PI * 0.25
 		U.mesh_box(icon, Vector3(0.3, 0.45, 0.35), Vector3(0, 0.45, 0), Color(0.3, 0.65, 1.0))
 		U.mesh_box(icon, Vector3(0.12, 0.2, 0.37), Vector3(-0.15, -0.05, 0), Color(0.8, 0.92, 1.0))
+	elif course_name == "indoor":
+		# A little climbing wall with colorful holds.
+		U.mesh_box(icon, Vector3(1.0, 1.3, 0.15), Vector3.ZERO, RAINBOW[4])
+		for k in 6:
+			U.mesh_box(icon, Vector3(0.2, 0.15, 0.3), Vector3(-0.25 + (k % 2) * 0.5, -0.45 + k * 0.18, 0), RAINBOW[k])
 	elif course_name == "slide":
 		# A little spiral slide around a white pole.
 		U.mesh_box(icon, Vector3(0.14, 1.4, 0.14), Vector3.ZERO, WHITE)
@@ -441,6 +447,9 @@ func _build_trees() -> void:
 		var p := Vector3(rng.randf_range(-34, 34), 0, rng.randf_range(-34, 34))
 		# Keep trees near the edges, away from the rides.
 		if absf(p.x) < 25 and absf(p.z) < 26:
+			continue
+		# And away from the doors.
+		if COURSES.values().any(func(c): return Vector2(p.x - c["door"].x, p.z - c["door"].z).length() < 5.0):
 			continue
 		var trunk_h := rng.randf_range(1.6, 2.6)
 		U.block(_park, Vector3(0.6, trunk_h, 0.6), p + Vector3(0, trunk_h * 0.5, 0), WOOD)

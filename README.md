@@ -10,7 +10,7 @@ game remembers your hat for next time.
 
 ![The five hats: crown, snowman, teddy bear, bunny ears and flower hat](docs/hats.jpg)
 
-Four rainbow doors in the park lead to bigger adventures. The two jump courses (an
+Five rainbow doors in the park lead to bigger adventures. The two jump courses (an
 "obby" in Roblox words) each have 10 numbered checkpoints and a golden trophy at the end.
 Platforms are wide and gaps are short, made for small kids.
 
@@ -38,12 +38,23 @@ Platforms are wide and gaps are short, made for small kids.
 |---|---|
 | ![Paddling a duck float in the water park, with swim rings, water jets and the slides](docs/water-park.jpg) | ![Riding the orange water slide](docs/water-slide.jpg) |
 
+- 🧗 **Indoor soft play** (little climbing wall over the door, straight behind the start): a
+  big frame with yellow nets, like the play areas in a mall. Climb the climbing wall (push
+  the joystick toward it) or walk up the padded rainbow steps to the first floor. Find your
+  way through the net tunnels, past swinging punching bags, to a second climbing wall that
+  leads to the top. Then ride the big yellow slide down into the ball pit. The balls move
+  aside as you wade through. There is also a rainbow tunnel to walk through on the floor.
+
+| Indoor soft play | On the climbing wall |
+|---|---|
+| ![The soft play: a ball pit with a yellow slide, a climbing wall and net tunnels above](docs/soft-play.jpg) | ![Climbing the climbing wall](docs/climbing-wall.jpg) |
+
 | The park | Lava course |
 |---|---|
 | ![The park: rides in the middle, hat stands at the start, and a rainbow door on each side](docs/park.jpg) | ![Lava course](docs/lava-course.jpg) |
 
 The doors stand away from the rides: lava on the left, sky on the right, and the spiral
-slide and water park behind the start, each with a sand path leading to it.
+slide, soft play and water park behind the start, each with a sand path leading to it.
 
 Only one place is shown at a time (the park or the course you are in), and each course is
 built the first time you enter it. This keeps the game light on older phones.
@@ -69,6 +80,8 @@ Play Store; choose "Install anyway". All versions are on the
 - Home button (top left): go back to the start
 - Menu button (three bars, top right): pause, read about the game, or close the app
 - Walk into a swing seat to sit and swing; press jump to get off
+- Push the joystick toward a climbing wall to climb it (or hold jump); let go to hang on,
+  pull back to drop off
 - In the water park: jump onto a swim ring or duck float to sit in it, move with the
   joystick, press jump to get out
 - On the sky course: the big number at the top is your checkpoint; the arrows next to it
@@ -107,11 +120,12 @@ godot --path . -- --shot=/tmp/shot.png          # save a screenshot after 2 seco
 
 ```bash
 godot --headless --path . -s tests/touch_test.gd   # touch buttons only react inside their circle
+godot --headless --path . -s tests/indoor_test.gd  # climb both climbing walls, slide into the ball pit
 ```
 
 ## Code
 
 The whole park is built from code in `scripts/main.gd`. `player.gd` is the character and
 camera, `place.gd` what every place behind a door shares, `course.gd` the shared course logic (checkpoints, platforms) with `sky_course.gd`
-and `lava_course.gd` laying out each course, `slide_course.gd` the spiral slide, `water_course.gd` the water park, `hats.gd` the hats, `touch_ui.gd` the on-screen controls, `rides.gd` the moving parts (swings,
+and `lava_course.gd` laying out each course, `slide_course.gd` the spiral slide, `water_course.gd` the water park, `indoor_course.gd` the soft play, `hats.gd` the hats, `touch_ui.gd` the on-screen controls, `rides.gd` the moving parts (swings,
 merry-go-round), and `util.gd` small helpers for making blocks.
