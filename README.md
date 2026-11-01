@@ -119,6 +119,7 @@ godot --path . -- --shot=/tmp/shot.png          # save a screenshot after 2 seco
 ## Tests
 
 ```bash
+./tools/check.sh                                  # run all tests; each one is killed after 90 s if it hangs
 godot --headless --path . -s tests/touch_test.gd   # touch buttons only react inside their circle
 godot --headless --path . -s tests/indoor_test.gd  # climb both climbing walls, slide into the ball pit
 ```
